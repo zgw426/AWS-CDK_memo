@@ -73,9 +73,10 @@ app.synth();
 ```
 
 
-## (2) スレッドを分けるーパターン１
+## (2) スレッドを分ける（ーパターン１）
 
-LambdaとAPI GWを別スレッドで作る
+- LambdaとAPI GWを別スレッドで作る
+- Lambdaを作るCFnスタックでAPIGWを作るCFnスタックを作るパターン
 
 
 ```typescript
@@ -121,7 +122,8 @@ app.synth();
 ## (3) スレッドを分けるーパターン２
 
 
-LambdaとAPI GWを別スレッドで作る
+- LambdaとAPI GWを別スレッドで作る
+- Lambdaを作るCFnスタックとAPIGWを作るCFnスタックを個別に実行するパターン
 
 
 ```typescript
