@@ -121,6 +121,21 @@ app.synth();
 
 ---
 
+## 環境
+
+CDKを実行したCloud9の環境
+
+```console
+$ date
+
+$ cdk --version
+2.78.0 (build 8e95c37)
+$ npm --version 
+8.19.4
+$ aws --version
+aws-cli/2.11.15 Python/3.11.3 Linux/4.14.313-235.533.amzn2.x86_64 exe/x86_64.amzn.2 prompt/off
+```
+
 ## ChatGPTで生成したコードを改良したコード
 
 - 作成したコードと役割
@@ -132,7 +147,7 @@ app.synth();
         - ALBを作成するクラス
 
 
-## ChatGPTに作ってもらったコードを動くように修正したコード
+## 02-1_ChatGPTに作ってもらったコードを動くように修正したコード
 
 `bin/cdk-test.ts`
 
@@ -230,3 +245,122 @@ interface MyStackALBProps extends StackProps {
   vpc: ec2.Vpc;
 }
 ```
+
+
+
+
+
+
+
+
+
+## 02-2_EC2インスタンスタイプ値をcontextに変数として設定する
+
+
+`bin/cdk-test.ts`
+
+```typescript
+#!/usr/bin/env node
+import * as cdk from 'aws-cdk-lib';
+import { App } from 'aws-cdk-lib';
+import { MyVpcStack } from '../lib/10_vpc-stack';
+import { MyStackALB } from '../lib/11_alb-stack';
+
+const app = new App({
+    context: {
+        "instanceType": "t2.micro"
+    }
+});
+
+const env = {
+  account: process.env.CDK_DEFAULT_ACCOUNT,
+  region: process.env.CDK_DEFAULT_REGION
+};
+
+
+const instanceType = app.node.tryGetContext('instanceType');
+
+const vpcStack = new MyVpcStack(app, 'MyVpcStack', { env });
+const albStack = new MyStackALB(app, 'MyStackALB', { vpc: vpcStack.vpc, instanceType, env });
+
+albStack.addDependency(vpcStack);
+
+app.synth();
+```
+
+
+`lib/10_vpc-stack.ts`
+
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import { Construct } from 'constructs';
+import { Stack } from 'aws-cdk-lib';
+
+export class MyVpcStack extends Stack {
+  public readonly vpc: ec2.Vpc;
+  constructor(scope: Construct, id: string, props?: MyVpcStackProps) {
+    super(scope, id, props);
+
+    this.vpc = new ec2.Vpc(this, 'MyVpc');
+  }
+}
+
+interface MyVpcStackProps extends cdk.StackProps {}
+```
+
+
+`lib/11_alb-stack.ts`
+
+```typescript
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
+import * as elbv2_tg from 'aws-cdk-lib/aws-elasticloadbalancingv2-targets';
+import { Construct } from 'constructs';
+import { Stack, StackProps } from 'aws-cdk-lib';
+
+
+interface AlbStackProps extends StackProps {
+  vpc: ec2.Vpc;
+  instanceType: string;
+}
+
+export class MyStackALB extends Stack {
+  constructor(scope: Construct, id: string, props: AlbStackProps) {
+    super(scope, id, props);
+
+    const vpc = props.vpc;
+    const instanceType = props.instanceType;
+
+    const instance1 = new ec2.Instance(this, 'MyEC2Instance1', {
+      vpc: vpc,
+      instanceType: new ec2.InstanceType(instanceType),
+      machineImage: new ec2.AmazonLinuxImage(),
+    });
+
+    const instance2 = new ec2.Instance(this, 'MyEC2Instance2', {
+      vpc: vpc,
+      instanceType: new ec2.InstanceType(instanceType),
+      machineImage: new ec2.AmazonLinuxImage(),
+    });
+
+    const lb = new elbv2.ApplicationLoadBalancer(this, 'MyALB', {
+      vpc: vpc,
+      internetFacing: true,
+    });
+
+    const listener = lb.addListener('MyListener', {
+      port: 80,
+    });
+
+    const instanceTarget1 = new elbv2_tg.InstanceTarget(instance1);
+    const instanceTarget2 = new elbv2_tg.InstanceTarget(instance2);
+
+    listener.addTargets('MyTargetGroup', {
+      port: 80,
+      targets: [instanceTarget1, instanceTarget2],
+    });
+  }
+}
+```
+
