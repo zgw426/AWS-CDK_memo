@@ -1,5 +1,7 @@
 # CDK v2 (TypeScript) RDSをデプロイするコード
 
+
+
 ## ChatGPTプロンプト
 
 ```
@@ -16,6 +18,7 @@
 #入力する文章
 RDSを作成するCDKスクリプトを作成してください
 ```
+
 
 
 ## 環境
@@ -108,6 +111,8 @@ jqインストール
 
 RDS(Postgre) secretmanaer 使ってDBアクセスするコマンド
 
+DBアクセスの基本
+
 ```console
 export AWS_REGION=<リージョン名>
 export SECRET_ID=<Secrets ManagerのシークレットID>
@@ -115,6 +120,7 @@ PGPASSWORD=$(aws secretsmanager get-secret-value --secret-id $SECRET_ID --query 
 psql "postgresql://<DBユーザー名>:${PGPASSWORD}@<DBエンドポイント>:<ポート番号>/<データベース名>?sslmode=require"
 ```
 
+DBアクセスの基本で必要パラメータを登録したもの
 
 ```console
 export AWS_REGION=ap-northeast-1
@@ -125,6 +131,7 @@ psql "postgresql://myusername:${PGPASSWORD}@mystack-myrdsinstancefb602cdd-vorloz
 
 ```
 
+DBアクセスしてみた。
 
 ```console
 iam0001:~/environment $ export AWS_REGION=ap-northeast-1
@@ -140,6 +147,7 @@ Type "help" for help.
 mydatabase=> 
 ```
 
+SecretManagerからパスワードを抜き出してみた
 
 ```console
 iam0001:~/environment $ echo ${SECRET_ID}
@@ -147,3 +155,4 @@ arn:aws:secretsmanager:ap-northeast-1:123456789123:secret:MyRdsInstanceSecretD34
 iam0001:~/environment $ echo ${PGPASSWORD}
 xmnuPe=JV_oRUu898VZld7.aGtYUMa
 ```
+
