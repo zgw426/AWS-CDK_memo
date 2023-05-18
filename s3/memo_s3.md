@@ -148,18 +148,20 @@ app.synth();
 
 ## サンプル３
 
-東京リージョンのCDK環境(Cloud9)でバージニアリージョンでCDK使えるようにする
+東京リージョンのCDK環境(Cloud9)からバージニアリージョンにS3バケットをデプロイするコード
+
+デプロイする前の準備
+以下コマンドでバージニアリージョンでCDK使えるようにする（東京リージョンのCDK環境(Cloud9)で実行）
 
 ```console
 cdk bootstrap aws://123456789123/us-east-1
 ```
 
+デプロイする
+
 ```console
-cdk deploy --role cdk-hnb659fds-cfn-exec-role-123456789123-us-east-1
+cdk deploy
 ```
-
-
-うまく動いてないスクリプト
 
 ```typescript
 #!/usr/bin/env node
@@ -186,3 +188,57 @@ new MyStack(app, 'MyStack', {
 app.synth();
 ```
 
+
+## サンプル４
+
+東京リージョンのCDK環境(Cloud9)からバージニアリージョンと大阪リージョンにS3バケットをデプロイするコード
+
+デプロイする前の準備
+以下コマンドでバージニアリージョンでCDK使えるようにする（東京リージョンのCDK環境(Cloud9)で実行）
+
+```console
+cdk bootstrap aws://123456789123/us-east-1
+cdk bootstrap aws://123456789123/ap-northeast-3
+```
+
+デプロイする
+
+```console
+cdk deploy
+```
+
+CDKコード
+
+```typescript
+#!/usr/bin/env node
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
+
+class MyStack01 extends Stack {
+  constructor(scope: App, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    // S3バケットを作成
+    const bucket = new Bucket(this, 'MyBucket', {
+      bucketName: 'my-piyo02-bucket-name-20230519-01',
+    });
+  }
+}
+
+class MyStack02 extends Stack {
+  constructor(scope: App, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    // S3バケットを作成
+    const bucket = new Bucket(this, 'MyBucket', {
+      bucketName: 'my-piyo02-bucket-name-20230519-02',
+    });
+  }
+}
+
+const app = new App();
+new MyStack01(app, 'MyStack01', {  env: {  region: 'us-east-1'  }});
+new MyStack02(app, 'MyStack02', {  env: {  region: 'ap-northeast-3'  }});
+
+app.synth();
+```
