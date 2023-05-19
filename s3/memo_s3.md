@@ -242,3 +242,62 @@ new MyStack02(app, 'MyStack02', {  env: {  region: 'ap-northeast-3'  }});
 
 app.synth();
 ```
+
+
+## サンプル５
+
+
+KMSカスタマーキーを作りS3を暗号化する
+
+```typescript
+#!/usr/bin/env node
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Bucket, BlockPublicAccess, BucketEncryption } from 'aws-cdk-lib/aws-s3';
+import { Key } from 'aws-cdk-lib/aws-kms';
+
+class MyStack01 extends Stack {
+  constructor(scope: App, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    // KMSカスタマーキーを作成
+    const kmsKey = new Key(this, 'MyKmsKey01', {
+      enableKeyRotation: true, // キーの自動ローテーションを有効にする場合
+    });
+
+    // S3バケットを作成
+    const bucket = new Bucket(this, 'MyBucket', {
+      bucketName: 'my-piyo01-bucket-name-20230519-03',
+      encryption: BucketEncryption.KMS,
+      encryptionKey: kmsKey,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+    });
+  }
+}
+
+class MyStack02 extends Stack {
+  constructor(scope: App, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    // KMSカスタマーキーを作成
+    const kmsKey = new Key(this, 'MyKmsKey02', {
+      enableKeyRotation: true, // キーの自動ローテーションを有効にする場合
+    });
+
+    // S3バケットを作成
+    const bucket = new Bucket(this, 'MyBucket', {
+      bucketName: 'my-piyo02-bucket-name-20230519-03',
+      encryption: BucketEncryption.KMS,
+      encryptionKey: kmsKey,
+      blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
+    });
+  }
+}
+
+const app = new App();
+new MyStack01(app, 'MyStack01', { env: { region: 'us-east-1' } });
+new MyStack02(app, 'MyStack02', { env: { region: 'ap-northeast-3' } });
+
+app.synth();
+```
+
+
