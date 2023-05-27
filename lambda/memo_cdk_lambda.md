@@ -187,3 +187,9 @@ def lambda_handler(event, context):
     }
 ```
 
+## (4) クラス定義をlib配下に、動的値をJSONに格納
+
+コードは sample_04 に格納
+
+
+
