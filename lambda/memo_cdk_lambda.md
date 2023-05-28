@@ -192,4 +192,29 @@ def lambda_handler(event, context):
 コードは sample_04 に格納
 
 
+## (5) Lambdaの定義をJSON形式でまとめた（ただしIAMロールはJSONで指定できてない）
+
+コードは sample_05 に格納
+
+以下のようにLambdaの設定をJSONにまとめた
+
+```typescript
+const lambda_set: string = `{
+  "lambdas": [
+      {
+        "note": "メモこれは lambda01 です",
+        "lambdaName": "CustomLambdaFunction01",
+        "lambdaHandler": "a01-sample.lambda_handler",
+        "codePath": "lib/data/lambda/a01"
+      },
+      {
+        "note": "メモこれは lambda02 です",  
+        "lambdaName": "CustomLambdaFunction02",
+        "lambdaHandler": "a02-sample.lambda_handler",
+        "codePath": "lib/data/lambda/a02"
+      }
+  ]
+}`;
+```
+
 
