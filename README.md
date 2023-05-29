@@ -19,3 +19,19 @@ $ aws --version
 aws-cli/2.11.15 Python/3.11.3 Linux/4.14.313-235.533.amzn2.x86_64 exe/x86_64.amzn.2 prompt/off
 ```
 
+
+
+## アプリの作成
+
+```typescript
+PJ_NAME=t3
+mkdir ${PJ_NAME}
+cd ${PJ_NAME}
+
+cdk init app --language typescript
+npm run build
+
+※lib/alambt.tsを編集
+
+cdk deploy
+```

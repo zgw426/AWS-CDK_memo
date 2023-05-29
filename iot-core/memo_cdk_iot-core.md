@@ -65,7 +65,7 @@ const sqlVersion = '2016-03-23';
 const sqlQuery = 'SELECT * FROM *';
 const s3BucketName = 's3-bucket-name';
 const s3Key = 'iot/hoge.csv';
-const defaultAcl = 'private'; // 修正: 文字列として直接指定
+const defaultAcl = 'private';
 const iamRoleArn = 'arn:aws:iam::12345678980123:role/iot-role';
 
 const iotRule = new iot.CfnTopicRule(stack, 'IoTCoreRule', {
