@@ -219,4 +219,36 @@ const lambda_set: string = `{
 
 
 
+## (6) 既存のIAMロールを指定しLambdaを作る
 
+既存のIAMロール 'lambda-role' を指定しLambdaを作る
+
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+
+class HelloLambdaStack extends cdk.Stack {
+    constructor(scope: Construct, id: string, props?: cdk.StackProps){
+        super(scope, id, props);
+
+        const roleName = 'lambda-role'; // 既存のIAMロール名
+        const role = iam.Role.fromRoleName(this, 'ExistingRole', roleName);
+        console.log('Role ARN:', role.roleArn); // roleのARN値を表示
+
+        const helloLambda = new lambda.Function(this, 'HelloLambda', {
+            runtime: lambda.Runtime.PYTHON_3_9, // Python3のランタイムを指定
+            code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+            handler: 'index.handler',
+            role: role,
+        });
+    }
+}
+
+const app = new cdk.App();
+
+new HelloLambdaStack(app, 'HelloLambdaStack');
+
+app.synth();
+```
