@@ -1,0 +1,94 @@
+
+OK
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
+import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+
+class MyStack extends Stack {
+  constructor(scope: App, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    // MyRole01: s3ReadOnlyAccessPolicyの権限を持つIAMロールを作成
+    const role01 = new Role(this, 'MyRole01', {
+      assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+      roleName: 'MyRole01',
+    });
+
+    const s3ReadOnlyAccessPolicy = ManagedPolicy.fromAwsManagedPolicyName(
+      'AmazonS3ReadOnlyAccess'
+    );
+    role01.addManagedPolicy(s3ReadOnlyAccessPolicy);
+
+    // Lambda関数を作成し、MyRole01をアタッチ
+    const lambdaFunction = new Function(this, 'MyLambda', {
+      runtime: Runtime.NODEJS_14_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      role: role01,
+    });
+
+  }
+}
+
+const app = new App();
+new MyStack(app, 'MyStack');
+app.synth();
+```
+
+
+
+
+NG
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Function, Runtime, Code } from 'aws-cdk-lib/aws-lambda';
+import { Role, ServicePrincipal, ManagedPolicy } from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+
+
+class MyIamStack extends Stack {
+    public readonly role: Role;
+    constructor(scope: App, id: string, props?: StackProps) {
+      super(scope, id, props);
+  
+      const role01 = new Role(this, 'MyRole01', {
+        assumedBy: new ServicePrincipal('lambda.amazonaws.com'),
+        roleName: 'MyRole01',
+      });
+  
+      const s3ReadOnlyAccessPolicy = ManagedPolicy.fromAwsManagedPolicyName(
+        'AmazonS3ReadOnlyAccess'
+      );
+      role01.addManagedPolicy(s3ReadOnlyAccessPolicy);
+
+      this.role = role01;
+    }
+  }
+  
+
+class MyLambdaStack extends Stack {
+  constructor(scope: App, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const iamrole = Stack.of(this, 'MyIamStack').stackName;
+    
+    const lambdaFunction = new Function(this, 'MyLambda', {
+      runtime: Runtime.NODEJS_14_X,
+      handler: 'index.handler',
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      role: iamrole.role,
+    });
+
+  }
+}
+
+const app = new App();
+
+new MyIamStack(app, 'MyIamStack');
+new MyLambdaStack(app, 'MyStack');
+app.synth();
+```
