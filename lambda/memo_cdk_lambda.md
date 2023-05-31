@@ -252,3 +252,14 @@ new HelloLambdaStack(app, 'HelloLambdaStack');
 
 app.synth();
 ```
+
+
+## (7) Lambdaの定義をJSON形式でまとめた（IAMロール含む）
+
+コードは sample_07 に格納
+
+- サンプル(5)(6)をマージしたもの
+    - (5) Lambdaの定義をJSON形式でまとめた（ただしIAMロールはJSONで指定できてない）
+    - (6) 既存のIAMロールを指定しLambdaを作る
+
+サンプルコードは、
