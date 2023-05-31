@@ -43,6 +43,7 @@ export class CustomLambdaStack extends Stack {
                 functionName: lambda_target.lambdaName, // Lambda関数名を指定
                 code: lambda.Code.fromAsset(lambda_target.codePath), // 指定ディレクトリからコードを取得
                 handler: lambda_target.lambdaHandler, // xxx.pyファイルのlambda_handler関数を指定
+                role: role,
             });
         }
     } //--- constructor ---//
