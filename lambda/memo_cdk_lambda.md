@@ -262,7 +262,7 @@ app.synth();
     - (6) 既存のIAMロールを指定しLambdaを作る
 
 
-## (8-1) 作ったLambdaとEventBridgeでキックする
+## (8) 作ったLambdaとEventBridgeでキックする
 
 Lambdaと、定期的にLambdaを実行するEventBridgeを作る
 
