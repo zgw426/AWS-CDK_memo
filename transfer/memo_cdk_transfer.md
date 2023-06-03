@@ -101,7 +101,7 @@ export class MyStack extends cdk.Stack {
         url: 'url',
       },
       identityProviderType: 'identityProviderType', // SERVICE_MANAGED|API_GATEWAY|AWS_DIRECTORY_SERVICE|AWS_LAMBDA
-      loggingRole: 'loggingRole',
+      loggingRole: 'loggingRole', //  arn:.*role/.*
       postAuthenticationLoginBanner: 'postAuthenticationLoginBanner',
       preAuthenticationLoginBanner: 'preAuthenticationLoginBanner',
       protocolDetails: {
