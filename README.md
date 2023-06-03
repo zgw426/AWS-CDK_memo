@@ -21,7 +21,7 @@ aws-cli/2.11.15 Python/3.11.3 Linux/4.14.313-235.533.amzn2.x86_64 exe/x86_64.amz
 
 
 
-## アプリの作成
+## アプリの作成①
 
 ```typescript
 PJ_NAME=t3
@@ -35,3 +35,23 @@ npm run build
 
 cdk deploy
 ```
+
+
+
+## アプリの作成②
+
+AWS SDKモジュールをインストールする場合
+
+```typescript
+PJ_NAME=t3
+mkdir ${PJ_NAME}
+cd ${PJ_NAME}
+
+cdk init app --language typescript
+npm run build
+
+※lib/alambt.tsを編集
+
+cdk deploy
+```
+

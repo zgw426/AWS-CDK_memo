@@ -36,7 +36,6 @@ cdk deploy
 `bin/lamb.ts`
 
 ```typescript
-#!/usr/bin/env node
 import * as cdk from 'aws-cdk-lib';
 import * as lambda from 'aws-cdk-lib/aws-lambda';
 import { Construct } from 'constructs';
@@ -262,4 +261,41 @@ app.synth();
     - (5) Lambdaの定義をJSON形式でまとめた（ただしIAMロールはJSONで指定できてない）
     - (6) 既存のIAMロールを指定しLambdaを作る
 
-サンプルコードは、
+
+## (8-1) 作ったLambdaとEventBridgeでキックする
+
+Lambdaと、定期的にLambdaを実行するEventBridgeを作る
+
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { Construct } from 'constructs';
+import * as events from 'aws-cdk-lib/aws-events';
+
+class CustomLambdaStack extends cdk.Stack {
+    constructor(scope: Construct, id: string, props?: cdk.StackProps){
+        super(scope, id, props);
+
+        const helloLambda = new lambda.Function(this, 'HelloLambda', {
+            runtime: lambda.Runtime.PYTHON_3_9, // Python3のランタイムを指定
+            code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+            handler: 'index.handler',
+        })
+
+        // EventBridgeルールを作成し、毎日実行するトリガーを設定
+        const rule = new events.Rule(this, 'MyEventBridgeRule', {
+          //schedule: events.Schedule.cron({ minute: '0', hour: '0' }), // 毎日午前0時に実行
+          //schedule: events.Schedule.expression('cron(0 3 ? * 5 *)'), // 毎週木曜のAM3時に実行
+          schedule: events.Schedule.rate(cdk.Duration.minutes(10)), // 10分ごとに実行
+        });
+
+    }//--- Constructor ---//
+}
+
+const app = new cdk.App();
+
+new CustomLambdaStack(app, 'CustomLambdaStack');
+
+app.synth();
+```
+
