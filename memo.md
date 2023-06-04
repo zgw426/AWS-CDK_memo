@@ -9,6 +9,7 @@
 - プロンプトバターン（１－１）－サンプルコードを書いてもらう
 - プロンプトバターン（１ー２）－書いてもらったコードで発生したエラーを対処してもらう
 　　このコードで以下のエラーが発生した。エラーを対策したコードを書いて
+　　エラーの説明と、対策案を提示してくれる
 - プロンプトバターン（２）－作成したコードで発生したエラーを対処してもらう
     - 書いたコード、発生したエラー、対処して
 - プロンプトバターン（３）－作成したコードを書き換えてもらう
@@ -18,6 +19,14 @@
 プロンプトバターン（４）
 　AWSがサイトで提供するサンプルを実行可能なコードに修正する
 　　（このコードを実行可能な状態にして）
+
+
+プロンプトバターン（５）
+　補填してもらう。途中まで書いたコードに追記してもらう
+　jsonのループ処理で、要素の出力を途中まで書いたコードを残りの要素を追記するようコードを補填してもらう
+　補填の際、こちらの書いてないコード（要素がない場合の処理）も書いてくれる
+
+
 
 
 
@@ -42,8 +51,8 @@ Protocolsの最初の要素の値がパターン FTP|FTPS|SFTP|AS2 に一致す�
 IdentityProviderDetails内の Function の値がパターン ^arn:[a-z-]+:lambda:.*$ に一致する必要があります。
 IdentityProviderDetails内の DirectoryId の値がパターン d-[0-9a-f]{10} に一致する必要があります。
 IdentityProviderDetails内の InvocationRole の値がパターン arn:.*role/.* に一致する必要があります。
-
 EndpointDetailsの VpcEndpointId の値がパターン vpce-[0-9a-f]{17} に一致する必要があります。
+
 EndpointDetailsの SecurityGroupIds 内の最初の要素の値がパターン sg-[0-9a-f]{8,17} に一致する必要があります。
 EndpointTypeの値がパターン PUBLIC|VPC|VPC_ENDPOINT に一致する必要があります。
 SecurityPolicyNameの値がパターン TransferSecurityPolicy-.+ に一致する必要があります。

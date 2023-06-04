@@ -65,7 +65,9 @@ for (const data_target of json_list) {
   for (const elementE of data_target.element_E) {
     console.log(elementE);
   }
+  
   if (data_target.element_F) {
+    // element_F の要素がある場合
     for (const elementF of data_target.element_F) {
       console.log(elementF);
     }

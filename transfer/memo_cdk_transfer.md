@@ -65,11 +65,6 @@ $ aws transfer describe-server --server-id s-00000000000000000
 ```
 
 
-
-
-
-
-
 ## パターン（２）
 
 オプションパラメータを全部列挙（動作未確認）
@@ -84,12 +79,12 @@ export class MyStack extends cdk.Stack {
     super(scope, id, props);
 
     const cfnServer = new transfer.CfnServer(this, 'MyCfnServer', /* all optional props */ {
-      certificate: 'certificate',
+      certificate: 'certificate', // 証明書のARN
       domain: 'domain', // S3|EFS
       endpointDetails: {
-        addressAllocationIds: ['addressAllocationIds'],
-        securityGroupIds: ['securityGroupIds'], // sg-[0-9a-f]{8,17}
-        subnetIds: ['subnetIds'], // arn:.*role/.*
+        addressAllocationIds: ['addressAllocationIds'], // 正規表現パターン ^eipalloc-([0-9a-f]{8,17})$ (Elastic IP アドレスの割り当てIDを指定する)
+        securityGroupIds: ['securityGroupIds'], // sg-[0-9a-f]{8,17} ※Subnet IDs unsupported for EndpointType: VPC_ENDPOINT
+        subnetIds: ['subnetIds'],
         vpcEndpointId: 'vpcEndpointId', //  vpce-[0-9a-f]{17}
         vpcId: 'vpcId',
       },
@@ -101,7 +96,7 @@ export class MyStack extends cdk.Stack {
         url: 'url',
       },
       identityProviderType: 'identityProviderType', // SERVICE_MANAGED|API_GATEWAY|AWS_DIRECTORY_SERVICE|AWS_LAMBDA
-      loggingRole: 'loggingRole', //  arn:.*role/.*
+      loggingRole: 'loggingRole', //  arn:.*role/.* ※IAMポリシー：AWSTransferLoggingAccess
       postAuthenticationLoginBanner: 'postAuthenticationLoginBanner',
       preAuthenticationLoginBanner: 'preAuthenticationLoginBanner',
       protocolDetails: {
@@ -136,4 +131,122 @@ new MyStack(app, 'MyStack');
 app.synth();
 ```
 
+
+## パターン（３）
+
+VPCとサブネットを指定して、Transferサーバーデプロイ時にエンドポイントも作る
+
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import { aws_transfer as transfer } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+
+export class MyStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    const cfnServer = new transfer.CfnServer(this, 'MyCfnServer', {
+      domain: 'S3', // S3|EFS
+      endpointDetails: {
+        securityGroupIds: ['sg-12345678'], // sg-[0-9a-f]{8,17} ※Subnet IDs unsupported for EndpointType: VPC_ENDPOINT
+        subnetIds: ['subnet-12345678', 'subnet-98765432'],
+        vpcId: 'vpc-eeeeeeee',
+      },
+      endpointType: 'VPC', // PUBLIC|VPC|VPC_ENDPOINT
+      identityProviderType: 'SERVICE_MANAGED', // SERVICE_MANAGED|API_GATEWAY|AWS_DIRECTORY_SERVICE|AWS_LAMBDA
+      loggingRole: 'arn:aws:iam::123456789012:role/service-role/AWSTransferLoggingAccess', //  arn:.*role/.*
+      protocols: ['SFTP'], // FTP|FTPS|SFTP|AS2
+      securityPolicyName: 'TransferSecurityPolicy-2020-06', // TransferSecurityPolicy-.+
+
+      tags: [{
+        key: 'key',
+        value: 'value',
+      }]
+
+    });
+  }
+}
+
+const app = new cdk.App();
+new MyStack(app, 'MyStack', {  env: {  region: 'ap-northeast-1'  }});
+
+app.synth();
+```
+
+## パターン（４）
+
+VPCエンドポイントを指定する（エンドポイントみつけられず、うまく動かない・・・）
+
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import { aws_transfer as transfer } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+
+export class MyStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    const cfnServer = new transfer.CfnServer(this, 'MyCfnServer', {
+      domain: 'S3', // S3|EFS
+      endpointDetails: {
+        vpcEndpointId: 'vpce-0011223344556677', //  vpce-[0-9a-f]{17}
+      },
+      endpointType: 'VPC_ENDPOINT', // PUBLIC|VPC|VPC_ENDPOINT
+      identityProviderType: 'SERVICE_MANAGED', // SERVICE_MANAGED|API_GATEWAY|AWS_DIRECTORY_SERVICE|AWS_LAMBDA
+      loggingRole: 'arn:aws:iam::123456789012:role/service-role/AWSTransferLoggingAccess', // arn:.*role/.*
+      protocols: ['SFTP'], // FTP|FTPS|SFTP|AS2
+      securityPolicyName: 'TransferSecurityPolicy-2020-06', // TransferSecurityPolicy-.+
+
+      tags: [{
+        key: 'key',
+        value: 'value',
+      }]
+
+    });
+  }
+}
+
+const app = new cdk.App();
+new MyStack(app, 'MyStack', {  env: { region: 'ap-northeast-1' }});
+
+app.synth();
+```
+
+
+
+## パターン（５）
+
+パブリック
+
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import { aws_transfer as transfer } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+
+export class MyStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    const cfnServer = new transfer.CfnServer(this, 'MyCfnServer', {
+      domain: 'S3', // S3|EFS
+      endpointType: 'PUBLIC', // PUBLIC|VPC|VPC_ENDPOINT
+      identityProviderType: 'SERVICE_MANAGED', // SERVICE_MANAGED|API_GATEWAY|AWS_DIRECTORY_SERVICE|AWS_LAMBDA
+      loggingRole: 'arn:aws:iam::602744163118:role/service-role/AWSTransferLoggingAccess', // arn:.*role/.*
+      protocols: ['SFTP'], // FTP|FTPS|SFTP|AS2
+      securityPolicyName: 'TransferSecurityPolicy-2020-06', // TransferSecurityPolicy-.+
+
+      tags: [{
+        key: 'key',
+        value: 'value',
+      }]
+
+    });
+  }
+}
+
+const app = new cdk.App();
+new MyStack(app, 'MyStack', {  env: { region: 'ap-northeast-1' }});
+
+app.synth();
+```
 

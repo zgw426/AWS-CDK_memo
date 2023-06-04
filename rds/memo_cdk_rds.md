@@ -34,7 +34,9 @@ iam0001:~/environment/cdk-test (master) $ node --version
 v16.20.0
 ```
 
-## サンプル１
+## サンプル（１）
+
+VPCも作成しRDSを作る
 
 ### コード
 
@@ -155,4 +157,204 @@ arn:aws:secretsmanager:ap-northeast-1:123456789123:secret:MyRdsInstanceSecretD34
 iam0001:~/environment $ echo ${PGPASSWORD}
 xmnuPe=JV_oRUu898VZld7.aGtYUMa
 ```
+
+## サンプル（２）
+
+VPCとRDSは、別クラスにし、クロススタック参照をつかってVPCを指定する
+
+```typescript
+import { App, StackProps } from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib';
+import { Vpc, SubnetType, IVpc } from 'aws-cdk-lib/aws-ec2';
+import { Construct } from 'constructs';
+import { DatabaseInstance, DatabaseInstanceEngine } from 'aws-cdk-lib/aws-rds';
+import * as rds from 'aws-cdk-lib/aws-rds';
+
+class CustomVpcStack extends cdk.Stack {
+  public readonly vpc: IVpc;
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    this.vpc = this.createVpc();
+    this.outputSubnetIds();
+  }
+
+  private createVpc(): IVpc {
+    return new Vpc(this, 'CustomVpc', {
+      cidr: '10.0.0.0/16',
+      maxAzs: 2,
+      natGateways: 1,
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: 'Public',
+          subnetType: SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: 24,
+          name: 'PrivateWithNat',
+          subnetType: SubnetType.PRIVATE_WITH_NAT,
+        },
+        {
+          cidrMask: 24,
+          name: 'PrivateIsolatedA',
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+        },
+        {
+          cidrMask: 24,
+          name: 'PrivateIsolatedB',
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+        },
+      ],
+    });
+  }
+
+  private outputSubnetIds(): void {
+    const publicSubnets = this.vpc.publicSubnets;
+    const privateSubnets = this.vpc.privateSubnets;
+
+    console.log('Public Subnets:');
+    for (const subnet of publicSubnets) {
+      console.log('Subnet ID:', subnet.subnetId);
+    }
+
+    console.log('Private Subnets:');
+    for (const subnet of privateSubnets) {
+      console.log('Subnet ID:', subnet.subnetId);
+    }
+  }
+}
+
+class CustomAccessStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: CustomAccessProps) {
+    super(scope, id, props);
+
+    const vpcInfo = props.vpc;
+
+    console.log('VPC:', vpcInfo.vpcId);
+    console.log('VPC CIDR:', vpcInfo.vpcCidrBlock);
+
+    const publicSubnets = vpcInfo.publicSubnets;
+    const privateSubnets = vpcInfo.privateSubnets;
+
+    console.log('Public Subnets:');
+    for (const subnet of publicSubnets) {
+      console.log('Subnet ID:', subnet.subnetId);
+      console.log('Subnet CIDR:', subnet.ipv4CidrBlock);
+    }
+
+    console.log('Private Subnets:');
+    for (const subnet of privateSubnets) {
+      console.log('Subnet ID:', subnet.subnetId);
+      console.log('Subnet CIDR:', subnet.ipv4CidrBlock);
+    }
+
+    // Create RDS instance in the 'PrivateIsolatedA' subnet
+    const customRds = new DatabaseInstance(this, 'CustomRDS', {
+      engine: DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_12_7
+      }),
+      vpc: vpcInfo,
+      vpcSubnets: {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
+    });
+  }
+}
+
+interface CustomAccessProps extends cdk.StackProps {
+  vpc: IVpc;
+}
+
+const app = new App();
+const customVpcStack = new CustomVpcStack(app, 'CustomVpcStack');
+new CustomAccessStack(app, 'CustomAccessStack', { vpc: customVpcStack.vpc });
+app.synth();
+```
+
+
+## サンプル（３）
+
+- クラストと関数をつかってみる。
+- `CustomVpcStack`クラスでVPCを作る関数`createVpc()`を定義する
+
+```typescript:bin/xxx.ts
+import { App, StackProps } from 'aws-cdk-lib';
+import * as cdk from 'aws-cdk-lib';
+import { Vpc, SubnetType, IVpc } from 'aws-cdk-lib/aws-ec2';
+import { Construct } from 'constructs';
+import { DatabaseInstance, DatabaseInstanceEngine } from 'aws-cdk-lib/aws-rds';
+import * as rds from 'aws-cdk-lib/aws-rds';
+
+class CustomVpcStack extends cdk.Stack {
+  public readonly vpc: IVpc;
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    this.vpc = this.createVpc();
+  }
+
+  private createVpc(): IVpc {
+    return new Vpc(this, 'CustomVpc', {
+      cidr: '10.0.0.0/16',
+      maxAzs: 2,
+      natGateways: 1,
+      subnetConfiguration: [
+        {
+          cidrMask: 24,
+          name: 'Public',
+          subnetType: SubnetType.PUBLIC,
+        },
+        {
+          cidrMask: 24,
+          name: 'PrivateWithNat',
+          subnetType: SubnetType.PRIVATE_WITH_NAT,
+        },
+        {
+          cidrMask: 24,
+          name: 'PrivateIsolatedA',
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+        },
+        {
+          cidrMask: 24,
+          name: 'PrivateIsolatedB',
+          subnetType: SubnetType.PRIVATE_ISOLATED,
+        },
+      ],
+    });
+  }
+}
+
+class CustomAccessStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: CustomAccessProps) {
+    super(scope, id, props);
+
+    this.customRds(props); // RDS
+  } //--- constructor ---//
+
+  private customRds(loProps: CustomAccessProps): void {
+    new DatabaseInstance(this, 'CustomRDS', {
+      engine: DatabaseInstanceEngine.postgres({
+        version: rds.PostgresEngineVersion.VER_12_7
+      }),
+      vpc: loProps.vpc,
+      vpcSubnets: {
+        subnetType: SubnetType.PRIVATE_ISOLATED,
+      },
+    });
+  } //--- private customRds ---//
+}
+
+interface CustomAccessProps extends cdk.StackProps {
+  vpc: IVpc;
+}
+
+const app = new App();
+const customVpcStack = new CustomVpcStack(app, 'CustomVpcStack');
+new CustomAccessStack(app, 'CustomAccessStack', { vpc: customVpcStack.vpc });
+app.synth();
+```
+
 
