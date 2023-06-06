@@ -334,7 +334,7 @@ export class ApiGatewayStack extends Stack {
             effect: iam.Effect.DENY,
             conditions: {
               StringNotEquals: {
-                "aws:SourceVpce": 'vpce-06feb730e9cec5870'
+                "aws:SourceVpce": 'vpce-12345678901234'
               }
             }
           }),
@@ -409,7 +409,7 @@ export class ApiGatewayStack extends Stack {
             effect: iam.Effect.DENY,
             conditions: {
               StringNotEquals: {
-                'aws:SourceVpce': 'vpce-06feb730e9cec5870',
+                'aws:SourceVpce': 'vpce-12345678901234',
               },
             },
           }),

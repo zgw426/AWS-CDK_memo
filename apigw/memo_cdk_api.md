@@ -224,4 +224,81 @@ app.synth();
 
 
 
+## (5) 別スタックで作ったLambdaを参照しPrivateなAPI GWを作る：CFnOutput - Fn.importValue
+
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import { Construct } from 'constructs';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cdk from 'aws-cdk-lib';
+
+export class LambdaStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const lambdaFunction = new lambda.Function(this, 'HelloLambda', {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      handler: 'index.handler',
+    });
+
+    new cdk.CfnOutput(this, 'helloLambdaOutput', {
+      value: lambdaFunction.functionArn,
+      description: 'lambdaFunction-functionArn',
+      exportName: 'helloLambdaOutput',
+    });
+  }
+}
+
+export class ApiGatewayStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const targetCfnOutput = 'helloLambdaOutput';
+    const targetResource = cdk.Fn.importValue(targetCfnOutput);
+
+    const lambdaFunction = lambda.Function.fromFunctionArn(
+      this,
+      'ImportedLambda',
+      targetResource
+    );
+
+    const privateApi = new apigateway.LambdaRestApi(this, 'privateApi', {
+      handler: lambdaFunction,
+      policy: new iam.PolicyDocument({
+        statements: [
+          new iam.PolicyStatement({
+            principals: [new iam.AnyPrincipal()],
+            actions: ['execute-api:Invoke'],
+            resources: ['execute-api:/*'],
+            effect: iam.Effect.DENY,
+            conditions: {
+              StringNotEquals: {
+                'aws:SourceVpce': 'vpce-12345678901234',
+              },
+            },
+          }),
+          new iam.PolicyStatement({
+            principals: [new iam.AnyPrincipal()],
+            actions: ['execute-api:Invoke'],
+            resources: ['execute-api:/*'],
+            effect: iam.Effect.ALLOW,
+          }),
+        ],
+      }),
+    });
+  }
+}
+
+const app = new App();
+new LambdaStack(app, 'LambdaStack');
+new ApiGatewayStack(app, 'ApiGatewayStack');
+app.synth();
+```
+
+
+
 
