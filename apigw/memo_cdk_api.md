@@ -226,6 +226,10 @@ app.synth();
 
 ## (5) 別スタックで作ったLambdaを参照しPrivateなAPI GWを作る：CFnOutput - Fn.importValue
 
+- ※事前にVPCエンドポイントの作成が必要
+    - エンドポイントタイプ interface
+    - サービス　com.amazonaws.ap-northeast-1.execute-api
+
 
 ```typescript
 import { App, Stack, StackProps } from 'aws-cdk-lib';
