@@ -173,3 +173,55 @@ const helloLambdaStack = new HelloLambdaStack(app, 'HelloLambdaStack', helloLamb
 
 app.synth();
 ```
+
+
+## (4) パラメータ指定が少しある
+
+```typescript
+import * as cdk from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import { Construct } from 'constructs';
+import { Duration, Stack, StackProps, aws_apigateway } from "aws-cdk-lib";
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+
+
+export class ApiGatewayStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props?: cdk.StackProps) {
+    super(scope, id, props);
+
+    const api = new apigateway.RestApi(this, 'MyApi', {
+      restApiName: 'My API',
+      description: 'My API Gateway',
+      deployOptions: {
+        stageName: 'prod'
+      }
+    });
+
+    const sampleLambda = new lambda.Function(this, 'SampleLambda', {
+      runtime: lambda.Runtime.PYTHON_3_9, // Python3のランタイムを指定
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      handler: 'index.handler',
+    })
+
+    // GET/sample を作成
+    const sample = api.root.addResource("sample");
+    const courseSearchIntegration = new aws_apigateway.LambdaIntegration(
+      sampleLambda
+    );
+    sample.addMethod("GET", courseSearchIntegration);
+
+    new cdk.CfnOutput(this, 'ApiGatewayEndpoint', {
+      value: api.url
+    });
+  }
+}
+
+const app = new cdk.App();
+new ApiGatewayStack(app, 'ApiGatewayStack');
+app.synth();
+
+```
+
+
+
+
