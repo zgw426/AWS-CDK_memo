@@ -304,5 +304,131 @@ app.synth();
 ```
 
 
+## (5-1) 別スタックで作ったLambdaを参照しPrivateなAPI GWを作る：CFnOutput - Fn.importValue
+
+- エンドポイントタイプが Edge の場合
+
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cdk from 'aws-cdk-lib';
+
+export class LambdaStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const lambdaFunction = new lambda.Function(this, 'HelloLambda', {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      handler: 'index.handler',
+    });
+
+    new cdk.CfnOutput(this, 'helloLambdaOutput', {
+      value: lambdaFunction.functionArn,
+      description: 'lambdaFunction-functionArn',
+      exportName: 'helloLambdaOutput',
+    });
+  }
+}
+
+export class ApiGatewayStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const targetCfnOutput = 'helloLambdaOutput';
+    const targetResource = cdk.Fn.importValue(targetCfnOutput);
+
+    const lambdaFunction = lambda.Function.fromFunctionArn(
+      this,
+      'ImportedLambda',
+      targetResource
+    );
+
+    const api = new apigateway.LambdaRestApi(this, 'publicApi', {
+      handler: lambdaFunction,
+      endpointTypes: [apigateway.EndpointType.EDGE],
+    });
+  }
+}
+
+const app = new App();
+new LambdaStack(app, 'LambdaStack');
+new ApiGatewayStack(app, 'ApiGatewayStack');
+app.synth();
+```
+
+
+
+## (5-1) 別スタックで作ったLambdaを参照しPrivateなAPI GWを作る：CFnOutput - Fn.importValue
+
+- アクセスログの有効化
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cdk from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as logs from 'aws-cdk-lib/aws-logs';
+
+export class LambdaStack extends Stack {
+  public readonly helloLambdaOutput: cdk.CfnOutput; // helloLambdaOutputプロパティを追加
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const lambdaFunction = new lambda.Function(this, 'HelloLambda', {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      handler: 'index.handler',
+    });
+
+    this.helloLambdaOutput = new cdk.CfnOutput(this, 'helloLambdaOutput', {
+      value: lambdaFunction.functionArn,
+      description: 'lambdaFunction-functionArn',
+      exportName: 'helloLambdaOutput',
+    });
+  }
+}
+
+export class ApiGatewayStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const targetCfnOutput = 'helloLambdaOutput';
+    const targetResource = cdk.Fn.importValue(targetCfnOutput);
+
+    const lambdaFunction = lambda.Function.fromFunctionArn(
+      this,
+      'ImportedLambda',
+      targetResource
+    );
+
+    // API Gatewayを作成する
+    const prdLogGroup = new logs.LogGroup(this, "PrdLogs");
+    const api = new apigateway.LambdaRestApi(this, 'publicApi', {
+      handler: lambdaFunction,
+      endpointTypes: [apigateway.EndpointType.EDGE],
+      deployOptions: {
+        accessLogDestination: new apigateway.LogGroupLogDestination(prdLogGroup), // LogGroupLogDestinationの引数を修正
+        accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(), // ログのフォーマットを設定する
+      },
+    });
+
+    new cdk.CfnOutput(this, 'apiGatewayOutput', {
+      value: api.url,
+      description: 'API Gateway URL',
+    });
+  }
+}
+
+const app = new App();
+new LambdaStack(app, 'LambdaStack');
+new ApiGatewayStack(app, 'ApiGatewayStack');
+app.synth();
+```
 
 
