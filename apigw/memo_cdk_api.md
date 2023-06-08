@@ -773,8 +773,8 @@ export class ApiGatewayStack extends Stack {
       proxy: false,
       deployOptions: {
         //https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_apigateway.StageOptions.html
-        accessLogFormat: apigateway.AccessLogFormat.clf(), // CloudWatchログ
-        //accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(), // ログのフォーマットを設定する
+        accessLogFormat: apigateway.AccessLogFormat.clf(), // ログの形式 CLF
+        //accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(), // ログの形式 JSON
         /*
         accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields({
           caller: false,
@@ -790,9 +790,9 @@ export class ApiGatewayStack extends Stack {
         */
 
         loggingLevel: apigateway.MethodLoggingLevel.INFO, 
-            // OFF : オフ
-            // INFO: エラーと情報ログ
-            // ERROR:エラーのみ
+          // OFF : オフ
+          // INFO: エラーと情報ログ
+          // ERROR:エラーのみ
         stageName: "hogefuga", // ステージ名
         metricsEnabled: true, // CloudWatch メトリクスを有効化
         accessLogDestination: new apigateway.LogGroupLogDestination( restApiLogAccessLogGroup, ), // Access Log Destination ARN
