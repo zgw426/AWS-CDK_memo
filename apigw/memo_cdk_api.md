@@ -599,5 +599,223 @@ app.synth();
 ```
 
 
+## (5-6) 別スタックで作ったLambdaを参照しPrivateなAPI GWを作る：CFnOutput - Fn.importValue
 
+- 以下の設定ができるようになった
+  - ステージ名
+  - CloudWatch メトリクスを有効化
+  - Access Log Destination ARN
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cdk from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as logs from 'aws-cdk-lib/aws-logs';
+
+export class LambdaStack extends Stack {
+  public readonly helloLambdaOutput: cdk.CfnOutput;
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const lambdaFunction = new lambda.Function(this, 'HelloLambda', {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      handler: 'index.handler',
+    });
+
+    this.helloLambdaOutput = new cdk.CfnOutput(this, 'helloLambdaOutput', {
+      value: lambdaFunction.functionArn,
+      description: 'lambdaFunction-functionArn',
+      exportName: 'helloLambdaOutput',
+    });
+  }
+}
+
+export class ApiGatewayStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const targetCfnOutput = 'helloLambdaOutput';
+    const targetResource = cdk.Fn.importValue(targetCfnOutput);
+
+    const lambdaFunction = lambda.Function.fromFunctionArn(
+      this,
+      'ImportedLambda',
+      targetResource
+    );
+
+    const restApiLogAccessLogGroup = new logs.LogGroup(
+      this,
+      'RestApiLogAccessLogGroup',
+      {
+        logGroupName: `/aws/apigateway/aaaaaaaaaaaaaaaaaaaarest-api-access-log`,
+        retention: 365,
+      },
+    );
+
+    // API Gatewayを作成する
+    //const prdLogGroup = new logs.LogGroup(this, "PrdLogs");
+    const api = new apigateway.LambdaRestApi(this, 'publicApi', {
+      handler: lambdaFunction,
+      endpointTypes: [apigateway.EndpointType.EDGE],
+      deployOptions: {
+        //https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_apigateway.StageOptions.html
+        accessLogFormat: apigateway.AccessLogFormat.clf(), // CloudWatchログ
+        //accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(), // ログのフォーマットを設定する
+        /*
+        accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields({
+          caller: false,
+          httpMethod: true,
+          ip: true,
+          protocol: true,
+          requestTime: true,
+          resourcePath: true,
+          responseLength: true,
+          status: true,
+          user: true,
+        }),
+        */
+
+        loggingLevel: apigateway.MethodLoggingLevel.INFO, 
+            // OFF : オフ
+            // INFO: エラーと情報ログ
+            // ERROR:エラーのみ
+        stageName: "hogefuga", // ステージ名
+        metricsEnabled: true, // CloudWatch メトリクスを有効化
+        accessLogDestination: new apigateway.LogGroupLogDestination( restApiLogAccessLogGroup, ), // Access Log Destination ARN
+      },
+    });
+
+    new cdk.CfnOutput(this, 'apiGatewayOutput', {
+      value: api.url,
+      description: 'API Gateway URL',
+    });
+  }
+}
+
+const app = new App();
+new LambdaStack(app, 'LambdaStack');
+new ApiGatewayStack(app, 'ApiGatewayStack');
+app.synth();
+```
+
+
+
+
+## (5-7) 別スタックで作ったLambdaを参照しPrivateなAPI GWを作る：CFnOutput - Fn.importValue
+
+
+- 以下の作成ができるようになった
+  - リソースとメソッド
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cdk from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as logs from 'aws-cdk-lib/aws-logs';
+
+export class LambdaStack extends Stack {
+  public readonly helloLambdaOutput: cdk.CfnOutput;
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const lambdaFunction = new lambda.Function(this, 'HelloLambda', {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      handler: 'index.handler',
+    });
+
+    this.helloLambdaOutput = new cdk.CfnOutput(this, 'helloLambdaOutput', {
+      value: lambdaFunction.functionArn,
+      description: 'lambdaFunction-functionArn',
+      exportName: 'helloLambdaOutput',
+    });
+  }
+}
+
+export class ApiGatewayStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const targetCfnOutput = 'helloLambdaOutput';
+    const targetResource = cdk.Fn.importValue(targetCfnOutput);
+
+    const lambdaFunction = lambda.Function.fromFunctionArn(
+      this,
+      'ImportedLambda',
+      targetResource
+    );
+
+    const restApiLogAccessLogGroup = new logs.LogGroup(
+      this,
+      'RestApiLogAccessLogGroup',
+      {
+        logGroupName: `/aws/apigateway/aaaaaaaaaaaaaaaaaaaarest-api-access-log`,
+        retention: 365,
+      },
+    );
+
+    // API Gatewayを作成する
+    //const prdLogGroup = new logs.LogGroup(this, "PrdLogs");
+    const api = new apigateway.LambdaRestApi(this, 'publicApi', {
+      //https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_apigateway.LambdaRestApi.html
+      handler: lambdaFunction,
+      endpointTypes: [apigateway.EndpointType.REGIONAL],
+        // .EDGE
+        // .REGIONAL
+      restApiName: "apigatewayhogepiyo", // API名
+      proxy: false,
+      deployOptions: {
+        //https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_apigateway.StageOptions.html
+        accessLogFormat: apigateway.AccessLogFormat.clf(), // CloudWatchログ
+        //accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields(), // ログのフォーマットを設定する
+        /*
+        accessLogFormat: apigateway.AccessLogFormat.jsonWithStandardFields({
+          caller: false,
+          httpMethod: true,
+          ip: true,
+          protocol: true,
+          requestTime: true,
+          resourcePath: true,
+          responseLength: true,
+          status: true,
+          user: true,
+        }),
+        */
+
+        loggingLevel: apigateway.MethodLoggingLevel.INFO, 
+            // OFF : オフ
+            // INFO: エラーと情報ログ
+            // ERROR:エラーのみ
+        stageName: "hogefuga", // ステージ名
+        metricsEnabled: true, // CloudWatch メトリクスを有効化
+        accessLogDestination: new apigateway.LogGroupLogDestination( restApiLogAccessLogGroup, ), // Access Log Destination ARN
+      },
+    });
+
+    api.root.addMethod('GET'); // GETメソッドを追加
+    api.root.addMethod('ANY'); // ANYメソッドを追加
+
+    const items = api.root.addResource('items'); // リソースを追加
+    items.addMethod('GET');  // GET /items　※追加したリソースにGETメソッドを追加
+    items.addMethod('POST'); // POST /items　※追加したリソースにPOSTメソッドを追加
+
+    new cdk.CfnOutput(this, 'apiGatewayOutput', {
+      value: api.url,
+      description: 'API Gateway URL',
+    });
+  }
+}
+
+const app = new App();
+new LambdaStack(app, 'LambdaStack');
+new ApiGatewayStack(app, 'ApiGatewayStack');
+app.synth();
+```
 
