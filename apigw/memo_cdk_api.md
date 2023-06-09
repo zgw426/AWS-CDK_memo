@@ -710,6 +710,7 @@ app.synth();
 
 - 以下の作成ができるようになった
   - リソースとメソッド
+  - CORS
 
 ```typescript
 import { App, Stack, StackProps } from 'aws-cdk-lib';
@@ -797,6 +798,14 @@ export class ApiGatewayStack extends Stack {
         metricsEnabled: true, // CloudWatch メトリクスを有効化
         accessLogDestination: new apigateway.LogGroupLogDestination( restApiLogAccessLogGroup, ), // Access Log Destination ARN
       },
+      /*
+      defaultCorsPreflightOptions: {
+        allowOrigins: apigateway.Cors.ALL_ORIGINS,
+        allowMethods: apigateway.Cors.ALL_METHODS,
+        allowHeaders: apigateway.Cors.DEFAULT_HEADERS,
+        statusCode: 200,
+      },
+      */
     });
 
     api.root.addMethod('GET'); // GETメソッドを追加
