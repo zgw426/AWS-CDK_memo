@@ -955,9 +955,7 @@ app.synth();
 ```
 
 
-## (5-9) 別スタックで作ったLambdaを参照しPrivateなAPI GWを作る：CFnOutput - Fn.importValue
-
-既存のCloudWatch ロググループを指定
+## (6-1) 既存のCloudWatch ロググループを指定_logs.LogGroup.fromLogGroupName()
 
 ```typescript
 import { App, Stack, StackProps } from 'aws-cdk-lib';
@@ -1029,8 +1027,6 @@ export class ApiGatewayStack extends Stack {
     // 既存のCloudWatchロググループを取得
     const existingLogGroup = logs.LogGroup.fromLogGroupName(this, 'ExistingLogGroup', existingLogGroupName);
 
-
-
     // API Gatewayを作成する
     //const prdLogGroup = new logs.LogGroup(this, "PrdLogs");
     const api = new apigateway.LambdaRestApi(this, 'publicApi', {
@@ -1068,6 +1064,114 @@ new CloudWatchStack(app, 'CloudWatchStack');
 new ApiGatewayStack(app, 'ApiGatewayStack');
 app.synth();
 ```
+
+
+## (6-2) 既存のCloudWatch ロググループを指定_cdk.Fn.importValue
+
+```typescript
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as cdk from 'aws-cdk-lib';
+import * as apigateway from 'aws-cdk-lib/aws-apigateway';
+import * as logs from 'aws-cdk-lib/aws-logs';
+
+export class LambdaStack extends Stack {
+  public readonly helloLambdaOutput: cdk.CfnOutput;
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const lambdaFunction = new lambda.Function(this, 'HelloLambda', {
+      runtime: lambda.Runtime.PYTHON_3_9,
+      code: lambda.Code.fromInline('def handler(event, context):\n    print("Hello")'),
+      handler: 'index.handler',
+    });
+
+    this.helloLambdaOutput = new cdk.CfnOutput(this, 'helloLambdaOutput', {
+      value: lambdaFunction.functionArn,
+      description: 'lambdaFunction-functionArn',
+      exportName: 'helloLambdaOutput',
+    });
+  }
+}
+
+export class CloudWatchStack extends Stack {
+  public readonly cloudWatchOutput: cdk.CfnOutput;
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const restApiLogAccessLogGroup = new logs.LogGroup(
+      this,
+      'RestApiLogAccessLogGroup',
+      {
+        logGroupName: '/aws/apigateway/aaaaa999999999999rest-api-access-log',
+        retention: logs.RetentionDays.ONE_YEAR,
+      },
+    );
+
+    this.cloudWatchOutput = new cdk.CfnOutput(this, 'CloudWatchOutput', {
+      value: restApiLogAccessLogGroup.logGroupName,
+      description: 'CloudWatch Log Group ARN',
+      exportName: 'CloudWatchLogGroupArn',
+    });
+  }
+}
+
+export class ApiGatewayStack extends Stack {
+  constructor(scope: Construct, id: string, props?: StackProps) {
+    super(scope, id, props);
+
+    const targetCfnOutput = 'helloLambdaOutput';
+    const targetResource = cdk.Fn.importValue(targetCfnOutput);
+    const lambdaFunction = lambda.Function.fromFunctionArn(
+      this,
+      'ImportedLambda',
+      targetResource
+    );
+
+    // 別スタックのエスポートした値(CFn.Output)を取得
+    const existingLogGroupName = cdk.Fn.importValue('CloudWatchLogGroupArn');
+    // 既存のCloudWatchロググループを取得
+    const existingLogGroup = logs.LogGroup.fromLogGroupName(this, 'ExistingLogGroup', existingLogGroupName);
+
+    // API Gatewayを作成する
+    const api = new apigateway.LambdaRestApi(this, 'publicApi', {
+      handler: lambdaFunction,
+      endpointTypes: [apigateway.EndpointType.REGIONAL],
+      restApiName: "apigatewayhogepiyo", // API名
+      proxy: false,
+      deployOptions: {
+        accessLogFormat: apigateway.AccessLogFormat.clf(), // ログの形式 CLF
+        loggingLevel: apigateway.MethodLoggingLevel.INFO, 
+        stageName: "hogefuga", // ステージ名
+        metricsEnabled: true, // CloudWatch メトリクスを有効化
+        accessLogDestination: new apigateway.LogGroupLogDestination(existingLogGroup),
+      },
+    });
+
+    api.root.addMethod('GET'); // GETメソッドを追加
+    api.root.addMethod('ANY'); // ANYメソッドを追加
+
+    const items = api.root.addResource('items'); // リソースを追加
+    items.addMethod('GET');  // GET /items　※追加したリソースにGETメソッドを追加
+    items.addMethod('POST'); // POST /items　※追加したリソースにPOSTメソッドを追加
+
+    new cdk.CfnOutput(this, 'apiGatewayOutput', {
+      value: api.url,
+      description: 'API Gateway URL',
+    });
+  }
+}
+
+const app = new App();
+new LambdaStack(app, 'LambdaStack');
+new CloudWatchStack(app, 'CloudWatchStack');
+new ApiGatewayStack(app, 'ApiGatewayStack');
+app.synth();
+```
+
 
 
 
