@@ -1,0 +1,9 @@
+{
+  "Id": "MyReplicationRule2",
+  "Status": "Disabled",
+  "Prefix": "",
+  "Destination": {
+    "Bucket": "arn:aws:s3:::tesuo-20230617-11-osaka",
+    "StorageClass": "STANDARD_IA"
+  }
+}
