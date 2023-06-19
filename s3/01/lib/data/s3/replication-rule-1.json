@@ -1,9 +1,17 @@
 {
   "Id": "MyReplicationRule1",
   "Status": "Enabled",
-  "Prefix": "",
+  "deleteMarkerReplication": {
+    "status": "Enabled",
+  },
+  "filter": {
+    "prefix": ""
+  },
+  "priority": 0,
   "Destination": {
     "Bucket": "arn:aws:s3:::tesuo-20230617-10-osaka",
-    "StorageClass": "STANDARD_IA"
+    "metrics": {
+      "status": "Enabled"
+    }
   }
 }

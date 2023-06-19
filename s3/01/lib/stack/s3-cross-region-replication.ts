@@ -4,6 +4,10 @@ import * as s3 from 'aws-cdk-lib/aws-s3';
 import { Construct } from 'constructs';
 import * as fs from 'fs';
 
+import * as sns from 'aws-cdk-lib/aws-sns';
+import * as s3n from 'aws-cdk-lib/aws-s3-notifications';
+
+
 export interface CustomS3ReplicationOsakaProps extends StackProps {
   s3ReplicatinSet: s3ReplicationSet[]; // 大阪リージョンS3バケット群
 }
@@ -39,6 +43,7 @@ export interface LifecycleRuleTransition {
   storageClass: StorageClass;
   transitionAfterObjectExists: Duration;
 }
+
 
 
 export class CustomS3ReplicationOsaka extends Stack {
@@ -92,6 +97,20 @@ export class CustomS3ReplicationOsaka extends Stack {
           ],
 
         });
+
+        // SNSトピックを作成
+        const topic = new sns.Topic(this, `${dataTarget.replicationBucketName}-sns`,{
+          topicName: `${dataTarget.replicationBucketName}-sns`
+        });
+
+        // S3バケットにイベント通知設定を追加
+        bucket.addEventNotification(
+          s3.EventType.REPLICATION_OPERATION_FAILED_REPLICATION,
+          new s3n.SnsDestination(topic)
+        );
+
+
+
       }
     } //--- for (const dataTarget of jsonList) ---//
   }
