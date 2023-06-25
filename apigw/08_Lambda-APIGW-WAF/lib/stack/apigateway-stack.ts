@@ -67,7 +67,8 @@ export class CustomApiGatewayStack extends Stack {
     
         new cdk.CfnOutput(this, 'apiGatewayOutput', {
             value: api.restApiId,
-            description: 'API Gateway URL',
+            description: 'API GateWay REST API',
+            exportName: 'apigw-id' // エクスポート名を設定
         });
     } //--- LOOP jsonList ---//
   } //--- constructor ---//

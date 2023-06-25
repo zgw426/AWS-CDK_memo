@@ -70,7 +70,7 @@ new CustomApiGatewayStack(app, 'CustomApiGatewayStack', customApiGatewayProps);
 
 // API GatewayのrestApiIdを取得
 //const apiGatewayRestApiId = '<API GatewayのrestApiId>';
-const apiGatewayRestApiId = '0ojc56fnik';
+const apiGatewayRestApiId = 'x3vfaprm1f';
 
 // WAFの連携を行うスタックを作成
 new WafIntegrationStack(app, 'WafIntegrationStack', apiGatewayRestApiId);

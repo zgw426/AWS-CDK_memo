@@ -1,6 +1,7 @@
 import * as cdk from 'aws-cdk-lib';
 import * as wafv2 from 'aws-cdk-lib/aws-wafv2';
 import { Construct } from 'constructs';
+import { Fn } from 'aws-cdk-lib';
 
 export class WafIntegrationStack extends cdk.Stack {
   constructor(scope: Construct, id: string, apiGatewayRestApiId: string) {
@@ -23,10 +24,21 @@ export class WafIntegrationStack extends cdk.Stack {
       ]
     });
 
+    console.log("0000000000000000000000---00000000000000000");
+
+    ///////////////////////////////
+
+    const exportedValue = Fn.importValue('apigw-id');
+    console.log(`121212 exportedValue = ${exportedValue}`);
+
+    ///////////////////////////////
+
+
+
     // API GatewayとWAFv2ウェブACLを連携
     const wafv2Integration = new wafv2.CfnWebACLAssociation(this, 'WebACLAssociation', {
       webAclArn: webAcl.attrArn,
-      resourceArn: `arn:aws:apigateway:ap-northeast-1::/restapis/0ojc56fnik/stages/stageName01`
+      resourceArn: `arn:aws:apigateway:ap-northeast-1::/restapis/x3vfaprm1f/stages/stageName01`,
     });
   }
 }

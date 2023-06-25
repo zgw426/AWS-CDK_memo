@@ -276,7 +276,7 @@ app.synth();
 
 ## サンプル（３）
 
-- クラストと関数をつかってみる。
+- クラスと関数をつかってみる。
 - `CustomVpcStack`クラスでVPCを作る関数`createVpc()`を定義する
 
 ```typescript:bin/xxx.ts
