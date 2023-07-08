@@ -245,3 +245,162 @@ new LambdaStack(app, 'LambdaStack', iamRoleStack.role01);
 app.synth();
 ```
 
+
+
+## (6) IAMロールを複数つくる
+
+JSON使ってIAMロールを複数作るサンプル
+
+```typescript
+import { App, Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
+
+
+export interface CustomIamRoleProps extends StackProps {
+  iamRoleSet: IamRoleSet[];
+}
+
+export interface IamRoleSet{
+  iamRoleName: string;
+  policys: string[];
+}
+
+class CustomIamRoleStack extends Stack {
+
+  constructor(scope: App, id: string, props: CustomIamRoleProps) {
+    super(scope, id, props);
+
+    for (const dataSet of props.iamRoleSet) {
+      // IAMロールを作成
+      const role = new iam.Role(this, dataSet.iamRoleName, {
+        assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+        roleName: dataSet.iamRoleName,
+      });
+
+      // 必要なポリシーをアタッチ
+      role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonS3ReadOnlyAccess'));
+      role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName('AmazonDynamoDBReadOnlyAccess'));
+
+    } //--- for ---//
+
+  }
+}
+
+
+const app = new App();
+
+const iamRoleSet: IamRoleSet[] = [
+  {
+    "iamRoleName": "iamrole-20230708-01",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+  },
+  {
+    "iamRoleName": "iamrole-20230708-02",
+    "policys": ["AmazonS3ReadOnlyAccess"],
+  },
+];
+
+const customIamRoleProps: CustomIamRoleProps = {
+  iamRoleSet: iamRoleSet
+}
+
+const customIamRoleStack = new CustomIamRoleStack(app, 'CustomIamRoleStack', customIamRoleProps);
+
+// スタックをデプロイ
+app.synth();
+```
+
+## (7) IAMロールを複数つくる(クロススタック対応)
+
+- サンプル(6)のIAMロールについて、以下2通りのクロススタックを追加
+  - CfnOutput
+  - public readonly
+
+
+```typescript
+import { App, Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
+
+
+export interface CustomIamRoleProps extends StackProps {
+  iamRoleSet: IamRoleSet[];
+}
+
+export interface IamRoleSet{
+  iamRoleName: string;
+  policys: string[];
+}
+
+class CustomIamRoleStack extends Stack {
+  public readonly iamRoles: { [iamRoleName: string]: iam.Role };
+
+  constructor(scope: App, id: string, props: CustomIamRoleProps) {
+    super(scope, id, props);
+
+    this.iamRoles = {}; // バケットオブジェクトを保持するオブジェクトを初期化
+
+    for (const dataSet of props.iamRoleSet) {
+      // IAMロールを作成
+      const role = new iam.Role(this, dataSet.iamRoleName, {
+        assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+        roleName: dataSet.iamRoleName,
+      });
+
+      for (const policy of dataSet.policys) {
+        // 必要なポリシーをアタッチ
+        role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName(policy));
+      }
+
+      // Export する
+      new CfnOutput(this, `${dataSet.iamRoleName}Output`, {
+        value: role.roleName,
+        exportName: `${dataSet.iamRoleName}Export`,
+      });
+
+      this.iamRoles[dataSet.iamRoleName] = role;
+    } //--- for ---//
+
+  }
+}
+
+
+const app = new App();
+
+const iamRoleSet: IamRoleSet[] = [
+  {
+    "iamRoleName": "iamrole-20230708-01",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+  },
+  {
+    "iamRoleName": "iamrole-20230708-02",
+    "policys": ["AmazonS3ReadOnlyAccess"],
+  },
+];
+
+const customIamRoleProps: CustomIamRoleProps = {
+  iamRoleSet: iamRoleSet
+}
+
+const customIamRoleStack = new CustomIamRoleStack(app, 'CustomIamRoleStack', customIamRoleProps);
+
+// 変数に格納して使用
+const iamRole1 = customIamRoleStack.iamRoles["iamrole-20230708-01"];
+const iamRole2 = customIamRoleStack.iamRoles["iamrole-20230708-02"];
+
+console.log('IAM Role 1:', iamRole1.roleName);
+console.log('IAM Role 2:', iamRole2.roleName);
+
+// スタックをデプロイ
+app.synth();
+```
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,472 @@
+# CDK v2 (TypeScript) でクロススタック参照を考える
+
+規則性のあるクロススタック参照を見つけたくて試行錯誤
+
+
+## サンプル（１）
+
+- IAMロールをクロススタック参照してLambdaを作る。
+- IAMロールを作るときに`public readonly iamRoles`で外部アクセス可にしてる
+- IAMロールは複数作成できるのでそれらを個別に外部アクセスできるようにしてる
+
+```typescript
+import { App, Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+
+//-------------------------------------------------------//
+// Stack Dependencies
+
+function addDependency(stack1: Stack, stack2: Stack) {
+  stack1.node.addDependency(stack2);
+}
+
+///////////////////////////////////////////////////////////
+// IAM Role
+
+export interface CustomIamRoleProps extends StackProps {
+  iamRoleSet: IamRoleSet[];
+}
+
+export interface IamRoleSet{
+  iamRoleName: string;
+  policys: string[];
+}
+
+class CustomIamRoleStack extends Stack {
+  public readonly iamRoles: { [iamRoleName: string]: iam.Role };
+
+  constructor(scope: App, id: string, props: CustomIamRoleProps) {
+    super(scope, id, props);
+
+    this.iamRoles = {}; // バケットオブジェクトを保持するオブジェクトを初期化
+    this.createIamRoles(props.iamRoleSet);
+  } //--- constructor ---//
+
+  private createIamRoles(iamRoleSet: IamRoleSet[]): void {
+    for (const dataSet of iamRoleSet) {
+      // IAMロールを作成
+      const role = new iam.Role(this, dataSet.iamRoleName, {
+        assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+        roleName: dataSet.iamRoleName,
+      });
+
+      for (const policy of dataSet.policys) {
+        // 必要なポリシーをアタッチ
+        role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName(policy));
+      }
+
+      // Export する
+      new CfnOutput(this, `${dataSet.iamRoleName}Output`, {
+        value: role.roleName,
+        exportName: `${dataSet.iamRoleName}Export`,
+      });
+
+      this.iamRoles[dataSet.iamRoleName] = role;
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////
+// Lambda
+
+export interface CustomLambdaProps extends StackProps {
+  lambdaSet: lambdaSet[];
+}
+
+export interface lambdaSet {
+  lambdaName: string; // Lambda名
+  lambdaHandler: string;
+  codePath: string; // コード xxxx.py の格納パス
+  note: string; // 備考
+  iamRole: iam.Role; // 付与するIAMロール
+}
+
+export class CustomLambdaStack extends Stack {
+  constructor(scope: Construct, id: string, props: CustomLambdaProps) {
+      super(scope, id, props);
+      this.createLambdaFunctions(props);
+    } //--- constructor ---//
+
+    private createLambdaFunctions(props: CustomLambdaProps) {
+      for (const dataSet of props.lambdaSet) {
+          console.log(`${dataSet.lambdaName}`);
+          new lambda.Function(this, dataSet.lambdaName, {
+              runtime: lambda.Runtime.PYTHON_3_9,
+              functionName: dataSet.lambdaName,
+              code: lambda.Code.fromAsset(dataSet.codePath),
+              handler: dataSet.lambdaHandler,
+              role: dataSet.iamRole,
+          });
+      }
+    }
+} //--- class ---//
+
+
+
+const app = new App();
+
+//=======================================================//
+// Combination01 (Lambda用のあれやこれやを作る)
+// 接頭辞 cmb01
+//-------------------------------------------------------//
+// IAM Role
+
+const cmb01IamRoleSet: IamRoleSet[] = [
+  {
+    "iamRoleName": "iamrole-20230708-01",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+  },
+  {
+    "iamRoleName": "iamrole-20230708-02",
+    "policys": ["AmazonS3ReadOnlyAccess"],
+  },
+];
+
+const cmb01CustomIamRoleProps: CustomIamRoleProps = {
+  iamRoleSet: cmb01IamRoleSet
+}
+
+const cmb01CustomIamRoleStack = new CustomIamRoleStack(app, 'Cmb01CustomIamRoleStack', cmb01CustomIamRoleProps);
+
+//-------------------------------------------------------//
+// Lambda
+
+const cmb01LambdaSet: lambdaSet[] = [
+    {
+      "note": "メモこれは lambda01 です",
+      "lambdaName": "CustomLambdaFunction01",
+      "lambdaHandler": "a01-sample.lambda_handler",
+      "codePath": "lib/data/lambda/a01",
+      "iamRole": cmb01CustomIamRoleStack.iamRoles["iamrole-20230708-01"],
+    },
+    {
+      "note": "メモこれは lambda02 です",  
+      "lambdaName": "CustomLambdaFunction02",
+      "lambdaHandler": "a02-sample.lambda_handler",
+      "codePath": "lib/data/lambda/a02",
+      "iamRole": cmb01CustomIamRoleStack.iamRoles["iamrole-20230708-02"],
+    }
+];
+
+const cmb01LambdaStackProps: CustomLambdaProps = {
+  lambdaSet: cmb01LambdaSet
+}
+
+const cmb01CustomLambdaStack = new CustomLambdaStack(app, 'Cmb01CustomLambdaStack', cmb01LambdaStackProps);
+addDependency(cmb01CustomLambdaStack, cmb01CustomIamRoleStack);
+
+// スタックをデプロイ
+app.synth();
+```
+
+
+
+## コードの規則について考えてみた
+
+- 原則AWSリソースの種類ごとにクラス(class)を作る
+- 複数のAWSリソースを1つのクラスにまとめた方が利点がある場合はまとめてOKとする
+- 同じ種類のAWSリソースを作成する場合でも、指定するパラメータが大幅に違うなどあれば別にクラスを作る
+- クラス(class)ごとにxxx.tsを作り`./lib/`配下に格納する
+- `./lib/`配下のxxx.tsファイルの命名規則
+    - {AWSリソース名}.ts
+        - 例
+            - `./lib/s3.ts`
+    - {AWSリソース名}-{中身がわかる文字列}.ts
+        - 例
+            - `./lib/s3-setLifeCycle.ts`
+            - `./lib/s3-setCrossRegion.ts`
+- `./lib/xxx.ts`には以下を含める
+    - クラス(class)
+    - インタフェース(interface):props
+        - クラスに渡す引数
+    - インタフェース(interface):set
+        - リソースを作るパラメータ
+- クラス(class)について
+    - リソースをN個作成できるようにする
+    - 作ったリソースはクロススタック参照できるようにする(`public readonly ・・・`)
+    - 作ったリソースは(念のため)CfnOutputValueでエクスポートする
+    - constructorに書くコードはできるだけ少なくする
+- インターフェース(set)について
+    - インターフェース(set)は、1つのAWSリソースを作成するに必要なパラメータのセットを定義する
+    - この定義の各要素(変数)に何を設定するかわかるようにコメントで説明する
+- クラス外で作成したリソースへのアクセスについて
+    - クラス外で作成したAWSリソースへのアクセスは、原則クロススタック参照を使用する
+    - 手動作成のAWSリソースへのアクセスは `formXXX` が使えればそれを使う
+    - 上記のどちらでもアクセスできない場合は、臨機応変に考える(知らん)
+- 組合せ
+    - リソース作るときにセットで作るリソースがある。
+    - そのセットのことを`組合せ`と呼称することにした。
+    - 変数の接頭辞には組合せで決めた接頭辞をつける
+    - スタック名にも組合せの接頭辞を付ける
+
+## コードの規則を元にちょっと作ってみる
+
+命名規則と実際の名前
+
+|リソース|クラス|関数|インタフェース(props)|インタフェース(set)|
+|---|---|---|-----|------|
+|文字列の規則→|PascalCase|camelCase|PascalCase|PascalCase|
+|IAM Role|CustomIamRoleStack|createIamRolesFunc|CustomIamRoleProps|IamRoleSet|
+|Lambda|CustomLambdaStack|createLambdaFunc|CustomLambdaProps|LambdaSet|
+
+|EC2|CustomEc2Stack|createEc2Func|CustomEc2Props|Ec2Set|
+
+組合せには接頭辞を用意する
+
+|組合せ名|接頭辞|備考|
+|----|---|----|
+|Combination01|cmd01|LambdaとそのLambdaに付与するIAMロールを作る|
+
+
+スタック名などに組合せの接頭辞を付与し、デプロイしたときにどの組合せのものか分かりやすくする
+
+|接頭辞|リソース|スタック|変数(props)|変数(set)|
+|---|---|---|---|---|
+|cmd01|IAM Role|Cmb01CustomIamRoleStack|cmb01CustomIamRoleProps|cmb01IamRoleSet|
+|cmd01|Lambda|Cmb01CustomLambdaStack|cmb01CustomLambdaProps|cmb01LambdaSet|
+|cmd02|IAM Role|Cmb02CustomIamRoleStack|cmb02CustomIamRoleProps|cmb02IamRoleSet|
+|cmd02|EC2|Cmb02CustomEc2Stack|cmb02CustomEc2Props|cmb02Ec2Set|
+
+
+## コードの規則を元に作ったサンプルコード
+
+`./bin/xxx.ts`に全コードを書いてるから、完全にコード規則に準じてるわけじゃないサンプル
+
+```typescript:./bin/xxx.ts
+import { App, Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import * as iam from 'aws-cdk-lib/aws-iam';
+import { Construct } from 'constructs';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as ec2 from 'aws-cdk-lib/aws-ec2';
+
+
+//-------------------------------------------------------//
+// Stack Dependencies
+
+function addDependency(stack1: Stack, stack2: Stack) {
+  stack1.node.addDependency(stack2);
+}
+
+///////////////////////////////////////////////////////////
+// IAM Role
+
+export interface CustomIamRoleProps extends StackProps {
+  iamRoleSet: IamRoleSet[];
+}
+
+export interface IamRoleSet{
+  iamRoleName: string;
+  policys: string[];
+}
+
+class CustomIamRoleStack extends Stack {
+  public readonly iamRoles: { [iamRoleName: string]: iam.Role };
+
+  constructor(scope: App, id: string, props: CustomIamRoleProps) {
+    super(scope, id, props);
+
+    this.iamRoles = {}; // バケットオブジェクトを保持するオブジェクトを初期化
+    this.createIamRolesFunc(props.iamRoleSet);
+  } //--- constructor ---//
+
+  private createIamRolesFunc(iamRoleSet: IamRoleSet[]): void {
+    for (const dataSet of iamRoleSet) {
+      // IAMロールを作成
+      const role = new iam.Role(this, dataSet.iamRoleName, {
+        assumedBy: new iam.ServicePrincipal('lambda.amazonaws.com'),
+        roleName: dataSet.iamRoleName,
+      });
+
+      for (const policy of dataSet.policys) {
+        // 必要なポリシーをアタッチ
+        role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName(policy));
+      }
+
+      // Export する
+      new CfnOutput(this, `${dataSet.iamRoleName}Output`, {
+        value: role.roleName,
+        exportName: `${dataSet.iamRoleName}Export`,
+      });
+
+      this.iamRoles[dataSet.iamRoleName] = role;
+    }
+  }
+}
+
+///////////////////////////////////////////////////////////
+// Lambda
+
+export interface CustomLambdaProps extends StackProps {
+  lambdaSet: LambdaSet[];
+}
+
+export interface LambdaSet {
+  lambdaName: string; // Lambda名
+  lambdaHandler: string;
+  codePath: string; // コード xxxx.py の格納パス
+  note: string; // 備考0
+  iamRole: iam.Role; // 付与するIAMロール
+}
+
+export class CustomLambdaStack extends Stack {
+  constructor(scope: Construct, id: string, props: CustomLambdaProps) {
+      super(scope, id, props);
+      this.createLambdaFunc(props);
+    } //--- constructor ---//
+
+    private createLambdaFunc(props: CustomLambdaProps) {
+      for (const dataSet of props.lambdaSet) {
+          console.log(`${dataSet.lambdaName}`);
+          new lambda.Function(this, dataSet.lambdaName, {
+              runtime: lambda.Runtime.PYTHON_3_9,
+              functionName: dataSet.lambdaName,
+              code: lambda.Code.fromAsset(dataSet.codePath),
+              handler: dataSet.lambdaHandler,
+              role: dataSet.iamRole,
+          });
+      }
+    }
+} //--- class ---//
+
+
+///////////////////////////////////////////////////////////
+// EC2
+
+export interface CustomEc2Props extends StackProps {
+  ec2Set: Ec2Set[];
+}
+
+export interface Ec2Set{
+  instanceType: string;
+  iamRole: iam.Role;
+}
+
+class CustomEc2Stack extends Stack {
+  constructor(scope: App, id: string, props: CustomEc2Props) {
+    super(scope, id, props);
+    this.createEc2Func(props);
+  }
+
+  private createEc2Func(props: CustomEc2Props) {
+    // 既存のVPCとサブネットのIDを指定
+    const existingVpcId = 'vpc-12345678';
+    const existingSubnetId = 'subnet-12345678';
+
+    for (const dataSet of props.ec2Set) {
+      const ec2Instance = new ec2.Instance(this, 'EC2Instance', {
+        vpc: ec2.Vpc.fromLookup(this, 'ExistingVpc', {
+          vpcId: existingVpcId
+        }),
+        instanceType: new ec2.InstanceType(dataSet.instanceType),
+        machineImage: ec2.MachineImage.latestAmazonLinux(),
+        role: dataSet.iamRole,
+      });
+    }
+  }
+}
+
+
+//■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■//
+const app = new App();
+
+//=======================================================//
+// Combination01 (LambdaとそのLambdaに付与するIAMロールを作る)
+// 接頭辞 cmb01
+//-------------------------------------------------------//
+// IAM Role
+
+const cmb01IamRoleSet: IamRoleSet[] = [
+  {
+    "iamRoleName": "iamrole-20230708-01",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+  },
+  {
+    "iamRoleName": "iamrole-20230708-02",
+    "policys": ["AmazonS3ReadOnlyAccess"],
+  },
+];
+
+const cmb01CustomIamRoleProps: CustomIamRoleProps = {
+  iamRoleSet: cmb01IamRoleSet
+}
+
+const cmb01CustomIamRoleStack = new CustomIamRoleStack(app, 'Cmb01CustomIamRoleStack', cmb01CustomIamRoleProps);
+
+//-------------------------------------------------------//
+// Lambda
+
+const cmb01LambdaSet: LambdaSet[] = [
+    {
+      "note": "メモこれは lambda01 です",
+      "lambdaName": "CustomLambdaFunction01",
+      "lambdaHandler": "a01-sample.lambda_handler",
+      "codePath": "lib/data/lambda/a01",
+      "iamRole": cmb01CustomIamRoleStack.iamRoles["iamrole-20230708-01"],
+    },
+    {
+      "note": "メモこれは lambda02 です",  
+      "lambdaName": "CustomLambdaFunction02",
+      "lambdaHandler": "a02-sample.lambda_handler",
+      "codePath": "lib/data/lambda/a02",
+      "iamRole": cmb01CustomIamRoleStack.iamRoles["iamrole-20230708-02"],
+    }
+];
+
+
+const cmb01LambdaProps: CustomLambdaProps = {
+  lambdaSet: cmb01LambdaSet
+}
+
+const cmb01CustomLambdaStack = new CustomLambdaStack(app, 'Cmb01CustomLambdaStack', cmb01LambdaProps);
+
+addDependency(cmb01CustomLambdaStack, cmb01CustomIamRoleStack);
+
+
+//=======================================================//
+// Combination02 (EC2とそのEC2に付与するIAMロールを作る)
+// 接頭辞 cmb02
+//-------------------------------------------------------//
+// IAM Role
+
+const cmb02IamRoleSet: IamRoleSet[] = [
+  {
+    "iamRoleName": "iamrole-20230708-03",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+  }
+];
+
+const cmb02CustomIamRoleProps: CustomIamRoleProps = {
+  iamRoleSet: cmb02IamRoleSet
+}
+
+const cmb02CustomIamRoleStack = new CustomIamRoleStack(app, 'Cmb02CustomIamRoleStack', cmb02CustomIamRoleProps);
+
+//-------------------------------------------------------//
+// EC2
+
+const cmb02Ec2Set: Ec2Set[] = [
+  {
+    "instanceType": "t2.micro",
+    "iamRole": cmb02CustomIamRoleStack.iamRoles["iamrole-20230708-03"],
+  }
+];
+
+const cmb02Ec2Props: CustomEc2Props = {
+  ec2Set: cmb02Ec2Set,
+  env: {
+    account: "123456789012",
+    region: "ap-northeast-1"
+  }
+}
+
+const cmb02CustomEc2Stack = new CustomEc2Stack(app, 'Cmb02CustomEc2Stack', cmb02Ec2Props);
+addDependency(cmb02CustomEc2Stack, cmb02CustomIamRoleStack);
+
+
+// スタックをデプロイ
+app.synth();
+```
+
+

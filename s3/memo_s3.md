@@ -301,3 +301,138 @@ app.synth();
 ```
 
 
+## サンプル６
+
+S3バケットを複数まとめて作る
+
+```typescript
+#!/usr/bin/env node
+import { App, Stack, StackProps } from 'aws-cdk-lib';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { RemovalPolicy } from 'aws-cdk-lib';
+
+
+export interface CustomS3BucketProps extends StackProps {
+  s3DataSet: S3DataSet[];
+}
+
+export interface S3DataSet{
+  bucketName: string;
+}
+
+class CustomS3BucketStack extends Stack {
+  constructor(scope: App, id: string, props: CustomS3BucketProps) {
+    super(scope, id, props);
+
+    for (const dataSet of props.s3DataSet) {
+      // S3バケットを作成
+      const bucket = new Bucket(this, dataSet.bucketName, {
+        bucketName: dataSet.bucketName,
+        removalPolicy: RemovalPolicy.DESTROY,
+      });
+    }
+  }
+}
+
+
+const app = new App();
+
+const s3DataSet: S3DataSet[] = [
+  {
+    "bucketName": "hoge-bucket-name-20230708-01",
+  },
+  {
+    "bucketName": "hoge-bucket-name-20230708-02",
+  },
+];
+
+const customS3BucketProps: CustomS3BucketProps = {
+  s3DataSet: s3DataSet,
+  env: {  region: 'ap-northeast-1'  }
+}
+
+new CustomS3BucketStack(app, 'CustomStack01', customS3BucketProps );
+
+app.synth();
+```
+
+
+## サンプル７
+
+- サンプル６（S3バケットを複数まとめて作る）を、以下２通りのクロススタック参照できるようにした
+  - CfnOutput
+  - public readonly
+
+
+```typescript
+#!/usr/bin/env node
+import { App, Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import { Bucket } from 'aws-cdk-lib/aws-s3';
+import { RemovalPolicy } from 'aws-cdk-lib';
+
+
+export interface CustomS3BucketProps extends StackProps {
+  s3DataSet: S3DataSet[];
+}
+
+export interface S3DataSet{
+  bucketName: string;
+}
+
+class CustomS3BucketStack extends Stack {
+  public readonly buckets: { [bucketName: string]: Bucket };
+
+  constructor(scope: App, id: string, props: CustomS3BucketProps) {
+    super(scope, id, props);
+
+    this.buckets = {}; // バケットオブジェクトを保持するオブジェクトを初期化
+
+    for (const dataSet of props.s3DataSet) {
+      // S3バケットを作成
+      const bucket = new Bucket(this, dataSet.bucketName, {
+        bucketName: dataSet.bucketName,
+        removalPolicy: RemovalPolicy.DESTROY,
+      });
+
+      // Export する
+      new CfnOutput(this, `${dataSet.bucketName}Output`, {
+        value: bucket.bucketName,
+        exportName: `${dataSet.bucketName}Export`,
+      });
+
+      this.buckets[dataSet.bucketName] = bucket;
+    } //--- for ---//
+  }
+}
+
+
+const app = new App();
+
+const s3DataSet: S3DataSet[] = [
+  {
+    "bucketName": "hoge-bucket-name-20230708-01",
+  },
+  {
+    "bucketName": "hoge-bucket-name-20230708-02",
+  },
+];
+
+const customS3BucketProps: CustomS3BucketProps = {
+  s3DataSet: s3DataSet,
+  env: {  region: 'ap-northeast-1'  }
+}
+
+const customStack01 = new CustomS3BucketStack(app, 'CustomStack01', customS3BucketProps );
+
+
+// 変数に格納して使用
+const bucket1 = customStack01.buckets["hoge-bucket-name-20230708-01"];
+const bucket2 = customStack01.buckets["hoge-bucket-name-20230708-02"];
+
+console.log('Bucket 1:', bucket1.bucketName);
+console.log('Bucket 2:', bucket2.bucketName);
+
+app.synth();
+```
+
+
