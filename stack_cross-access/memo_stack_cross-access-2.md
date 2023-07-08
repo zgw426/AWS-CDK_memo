@@ -61,12 +61,12 @@
 
 スタック名などに組合せの接頭辞を付与し、デプロイしたときにどの組合せのものか分かりやすくする
 
-|接頭辞|リソース|スタック|変数(props)|変数(set)|依存元|
-|---|---|---|---|---|---|
-|cmd01|IAM Role|Cmb01IamRoleStack|cmb01IamRoleProps|cmb01IamRoleSet|ー|
-|cmd01|Lambda|Cmb01LambdaStack|cmb01LambdaProps|cmb01LambdaSet|Cmb01IamRoleStack|
-|cmd02|IAM Role|Cmb02IamRoleStack|cmb02IamRoleProps|cmb02IamRoleSet|ー|
-|cmd02|EC2|Cmb02Ec2Stack|cmb02Ec2Props|cmb02Ec2Set|Cmb02IamRoleStack|
+|接頭辞|リソース|スタック|変数(props)|変数(set)|依存元|備考|
+|---|---|---|---|---|---|---|
+|cmd01|IAM Role|Cmb01IamRoleStack|cmb01IamRoleProps|cmb01IamRoleSet|ー|Lambda用のIAMロール|
+|cmd01|Lambda|Cmb01LambdaStack|cmb01LambdaProps|cmb01LambdaSet|Cmb01IamRoleStack||
+|cmd02|IAM Role|Cmb02IamRoleStack|cmb02IamRoleProps|cmb02IamRoleSet|ー|EC2用のIAMロール|
+|cmd02|EC2|Cmb02Ec2Stack|cmb02Ec2Props|cmb02Ec2Set|Cmb02IamRoleStack||
 
 
 ## コードの規則を元に作ったサンプルコード
