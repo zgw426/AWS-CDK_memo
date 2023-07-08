@@ -47,10 +47,10 @@
 |リソース|クラス|関数|インタフェース(props)|インタフェース(set)|
 |---|---|---|-----|------|
 |文字列の規則→|PascalCase|camelCase|PascalCase|PascalCase|
-|IAM Role|CustomIamRoleStack|createIamRolesFunc|CustomIamRoleProps|IamRoleSet|
-|Lambda|CustomLambdaStack|createLambdaFunc|CustomLambdaProps|LambdaSet|
-
-|EC2|CustomEc2Stack|createEc2Func|CustomEc2Props|Ec2Set|
+|命名規則→|XxxStack|createXxxFunc|XxxProps|XxxSet|
+|IAM Role|IamRoleStack|createIamRolesFunc|IamRoleProps|IamRoleSet|
+|Lambda|LambdaStack|createLambdaFunc|LambdaProps|LambdaSet|
+|EC2|Ec2Stack|createEc2Func|Ec2Props|Ec2Set|
 
 組合せには接頭辞を用意する
 
@@ -63,10 +63,10 @@
 
 |接頭辞|リソース|スタック|変数(props)|変数(set)|
 |---|---|---|---|---|
-|cmd01|IAM Role|Cmb01CustomIamRoleStack|cmb01CustomIamRoleProps|cmb01IamRoleSet|
-|cmd01|Lambda|Cmb01CustomLambdaStack|cmb01CustomLambdaProps|cmb01LambdaSet|
-|cmd02|IAM Role|Cmb02CustomIamRoleStack|cmb02CustomIamRoleProps|cmb02IamRoleSet|
-|cmd02|EC2|Cmb02CustomEc2Stack|cmb02CustomEc2Props|cmb02Ec2Set|
+|cmd01|IAM Role|Cmb01IamRoleStack|cmb01IamRoleProps|cmb01IamRoleSet|
+|cmd01|Lambda|Cmb01LambdaStack|cmb01LambdaProps|cmb01LambdaSet|
+|cmd02|IAM Role|Cmb02IamRoleStack|cmb02IamRoleProps|cmb02IamRoleSet|
+|cmd02|EC2|Cmb02Ec2Stack|cmb02Ec2Props|cmb02Ec2Set|
 
 
 ## コードの規則を元に作ったサンプルコード
@@ -91,7 +91,7 @@ function addDependency(stack1: Stack, stack2: Stack) {
 ///////////////////////////////////////////////////////////
 // IAM Role
 
-export interface CustomIamRoleProps extends StackProps {
+export interface IamRoleProps extends StackProps {
   iamRoleSet: IamRoleSet[];
 }
 
@@ -100,10 +100,10 @@ export interface IamRoleSet{
   policys: string[];
 }
 
-class CustomIamRoleStack extends Stack {
+class IamRoleStack extends Stack {
   public readonly iamRoles: { [iamRoleName: string]: iam.Role };
 
-  constructor(scope: App, id: string, props: CustomIamRoleProps) {
+  constructor(scope: App, id: string, props: IamRoleProps) {
     super(scope, id, props);
 
     this.iamRoles = {}; // バケットオブジェクトを保持するオブジェクトを初期化
@@ -137,7 +137,7 @@ class CustomIamRoleStack extends Stack {
 ///////////////////////////////////////////////////////////
 // Lambda
 
-export interface CustomLambdaProps extends StackProps {
+export interface LambdaProps extends StackProps {
   lambdaSet: LambdaSet[];
 }
 
@@ -149,13 +149,13 @@ export interface LambdaSet {
   iamRole: iam.Role; // 付与するIAMロール
 }
 
-export class CustomLambdaStack extends Stack {
-  constructor(scope: Construct, id: string, props: CustomLambdaProps) {
+export class LambdaStack extends Stack {
+  constructor(scope: Construct, id: string, props: LambdaProps) {
       super(scope, id, props);
       this.createLambdaFunc(props);
     } //--- constructor ---//
 
-    private createLambdaFunc(props: CustomLambdaProps) {
+    private createLambdaFunc(props: LambdaProps) {
       for (const dataSet of props.lambdaSet) {
           console.log(`${dataSet.lambdaName}`);
           new lambda.Function(this, dataSet.lambdaName, {
@@ -173,7 +173,7 @@ export class CustomLambdaStack extends Stack {
 ///////////////////////////////////////////////////////////
 // EC2
 
-export interface CustomEc2Props extends StackProps {
+export interface Ec2Props extends StackProps {
   ec2Set: Ec2Set[];
 }
 
@@ -182,16 +182,16 @@ export interface Ec2Set{
   iamRole: iam.Role;
 }
 
-class CustomEc2Stack extends Stack {
-  constructor(scope: App, id: string, props: CustomEc2Props) {
+class Ec2Stack extends Stack {
+  constructor(scope: App, id: string, props: Ec2Props) {
     super(scope, id, props);
     this.createEc2Func(props);
   }
 
-  private createEc2Func(props: CustomEc2Props) {
+  private createEc2Func(props: Ec2Props) {
     // 既存のVPCとサブネットのIDを指定
-    const existingVpcId = 'vpc-12345678';
-    const existingSubnetId = 'subnet-12345678';
+    const existingVpcId = 'vpc-e2652887';
+    const existingSubnetId = 'subnet-48324b60';
 
     for (const dataSet of props.ec2Set) {
       const ec2Instance = new ec2.Instance(this, 'EC2Instance', {
@@ -227,11 +227,11 @@ const cmb01IamRoleSet: IamRoleSet[] = [
   },
 ];
 
-const cmb01CustomIamRoleProps: CustomIamRoleProps = {
+const cmb01IamRoleProps: IamRoleProps = {
   iamRoleSet: cmb01IamRoleSet
 }
 
-const cmb01CustomIamRoleStack = new CustomIamRoleStack(app, 'Cmb01CustomIamRoleStack', cmb01CustomIamRoleProps);
+const cmb01IamRoleStack = new IamRoleStack(app, 'Cmb01IamRoleStack', cmb01IamRoleProps);
 
 //-------------------------------------------------------//
 // Lambda
@@ -239,28 +239,28 @@ const cmb01CustomIamRoleStack = new CustomIamRoleStack(app, 'Cmb01CustomIamRoleS
 const cmb01LambdaSet: LambdaSet[] = [
     {
       "note": "メモこれは lambda01 です",
-      "lambdaName": "CustomLambdaFunction01",
+      "lambdaName": "LambdaFunction01",
       "lambdaHandler": "a01-sample.lambda_handler",
       "codePath": "lib/data/lambda/a01",
-      "iamRole": cmb01CustomIamRoleStack.iamRoles["iamrole-20230708-01"],
+      "iamRole": cmb01IamRoleStack.iamRoles["iamrole-20230708-01"],
     },
     {
       "note": "メモこれは lambda02 です",  
-      "lambdaName": "CustomLambdaFunction02",
+      "lambdaName": "LambdaFunction02",
       "lambdaHandler": "a02-sample.lambda_handler",
       "codePath": "lib/data/lambda/a02",
-      "iamRole": cmb01CustomIamRoleStack.iamRoles["iamrole-20230708-02"],
+      "iamRole": cmb01IamRoleStack.iamRoles["iamrole-20230708-02"],
     }
 ];
 
 
-const cmb01LambdaProps: CustomLambdaProps = {
+const cmb01LambdaProps: LambdaProps = {
   lambdaSet: cmb01LambdaSet
 }
 
-const cmb01CustomLambdaStack = new CustomLambdaStack(app, 'Cmb01CustomLambdaStack', cmb01LambdaProps);
+const cmb01LambdaStack = new LambdaStack(app, 'Cmb01LambdaStack', cmb01LambdaProps);
 
-addDependency(cmb01CustomLambdaStack, cmb01CustomIamRoleStack);
+addDependency(cmb01LambdaStack, cmb01IamRoleStack);
 
 
 //=======================================================//
@@ -276,11 +276,11 @@ const cmb02IamRoleSet: IamRoleSet[] = [
   }
 ];
 
-const cmb02CustomIamRoleProps: CustomIamRoleProps = {
+const cmb02IamRoleProps: IamRoleProps = {
   iamRoleSet: cmb02IamRoleSet
 }
 
-const cmb02CustomIamRoleStack = new CustomIamRoleStack(app, 'Cmb02CustomIamRoleStack', cmb02CustomIamRoleProps);
+const cmb02IamRoleStack = new IamRoleStack(app, 'Cmb02IamRoleStack', cmb02IamRoleProps);
 
 //-------------------------------------------------------//
 // EC2
@@ -288,20 +288,20 @@ const cmb02CustomIamRoleStack = new CustomIamRoleStack(app, 'Cmb02CustomIamRoleS
 const cmb02Ec2Set: Ec2Set[] = [
   {
     "instanceType": "t2.micro",
-    "iamRole": cmb02CustomIamRoleStack.iamRoles["iamrole-20230708-03"],
+    "iamRole": cmb02IamRoleStack.iamRoles["iamrole-20230708-03"],
   }
 ];
 
-const cmb02Ec2Props: CustomEc2Props = {
+const cmb02Ec2Props: Ec2Props = {
   ec2Set: cmb02Ec2Set,
   env: {
-    account: "123456789012",
+    account: "602744163118",
     region: "ap-northeast-1"
   }
 }
 
-const cmb02CustomEc2Stack = new CustomEc2Stack(app, 'Cmb02CustomEc2Stack', cmb02Ec2Props);
-addDependency(cmb02CustomEc2Stack, cmb02CustomIamRoleStack);
+const cmb02Ec2Stack = new Ec2Stack(app, 'Cmb02Ec2Stack', cmb02Ec2Props);
+addDependency(cmb02Ec2Stack, cmb02IamRoleStack);
 
 
 // スタックをデプロイ
