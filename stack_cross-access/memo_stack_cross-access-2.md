@@ -191,8 +191,8 @@ class Ec2Stack extends Stack {
 
   private createEc2Func(props: Ec2Props) {
     // 既存のVPCとサブネットのIDを指定
-    const existingVpcId = 'vpc-e2652887';
-    const existingSubnetId = 'subnet-48324b60';
+    const existingVpcId = 'vpc-12345678';
+    const existingSubnetId = 'subnet-1234567';
 
     for (const dataSet of props.ec2Set) {
       const ec2Instance = new ec2.Instance(this, 'EC2Instance', {
@@ -296,7 +296,7 @@ const cmb02Ec2Set: Ec2Set[] = [
 const cmb02Ec2Props: Ec2Props = {
   ec2Set: cmb02Ec2Set,
   env: {
-    account: "602744163118",
+    account: "123456789012",
     region: "ap-northeast-1"
   }
 }
