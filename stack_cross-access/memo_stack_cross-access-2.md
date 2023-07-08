@@ -33,6 +33,7 @@
 - クラス外で作成したリソースへのアクセスについて
     - クラス外で作成したAWSリソースへのアクセスは、原則クロススタック参照を使用する
     - 手動作成のAWSリソースへのアクセスは `formXXX` が使えればそれを使う
+        - `formXXX`の例を(*1)にかく
     - 上記のどちらでもアクセスできない場合は、臨機応変に考える(知らん)
 - 組合せ
     - リソース作るときにセットで作るリソースがある。
@@ -309,3 +310,45 @@ app.synth();
 ```
 
 
+
+## (*1) formXXXの例
+
+- ACM:
+    - acm.Certificate.fromCertificateArn
+- API Gateway v2:
+    - apigatewayv2.Api.fromApiId
+    - apigatewayv2.Stage.fromStageName
+- CloudFormation:
+    - cloudformation.Stack.fromStackName
+- CloudFront:
+    - cloudfront.Distribution.fromDistributionAttributes
+- CloudWatch:
+    - cloudwatch.Alarm.fromAlarmArn
+- DynamoDB:
+    - dynamodb.Table.fromTableName
+- EC2:
+    - ec2.Vpc.fromVpcAttributes
+    - ec2.Instance.fromInstanceAttributes
+- Elastic Beanstalk:
+    - elasticbeanstalk.Application.fromApplicationName
+- IAM:
+    - iam.Role.fromRoleArn
+    - iam.Role.fromRoleName
+- Lambda:
+    - lambda.Function.fromFunctionArn
+    - lambda.Function.fromFunctionName
+- S3:
+    - s3.Bucket.fromBucketArn
+    - s3.Bucket.fromBucketName
+- SecurityGroup:
+    - ec2.SecurityGroup.fromSecurityGroupId
+    - ec2.SecurityGroup.fromSecurityGroupName
+    - ec2.SecurityGroup.fromLookup
+- VPC
+    - ec2.Vpc.fromVpcAttributes
+    - ec2.Vpc.fromLookup
+    - ec2.Vpc.fromVpcId
+    - ec2.Vpc.fromVpcAttributes
+- サブネットグループ
+    - ec2.SubnetGroup.fromSubnetGroupName
+    - ec2.SubnetGroup.fromLookup
