@@ -23,21 +23,21 @@ constructor(scope: Construct, id: string, props: LambdaProps) {
     } //--- constructor ---//
 
     private createLambdaFunc(props: LambdaProps) {
-    for (const dataSet of props.lambdaSet) {
-        console.log(`${dataSet.lambdaName}`);
-        const lambdaFunction = new lambda.Function(this, dataSet.lambdaName, {
-            runtime: lambda.Runtime.PYTHON_3_9,
-            functionName: dataSet.lambdaName,
-            code: lambda.Code.fromAsset(dataSet.codePath),
-            handler: dataSet.lambdaHandler,
-            role: dataSet.iamRole,
-        });
-
-        new CfnOutput(this, `${dataSet.lambdaName}Export`, {
-            value: lambdaFunction.functionArn,
-            exportName: `${dataSet.lambdaName}-Arn`,
-        });
-    }
+        for (const dataSet of props.lambdaSet) {
+            console.log(`${dataSet.lambdaName}`);
+            const lambdaFunction = new lambda.Function(this, dataSet.lambdaName, {
+                runtime: lambda.Runtime.PYTHON_3_9,
+                functionName: dataSet.lambdaName,
+                code: lambda.Code.fromAsset(dataSet.codePath),
+                handler: dataSet.lambdaHandler,
+                role: dataSet.iamRole,
+            });
+  
+            new CfnOutput(this, `${dataSet.lambdaName}Export`, {
+                value: lambdaFunction.functionArn,
+                exportName: `${dataSet.lambdaName}-Arn`,
+            });
+        }
     }
 } //--- class ---//
 

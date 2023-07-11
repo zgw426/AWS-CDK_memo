@@ -7,6 +7,12 @@
 - 原則AWSリソースの種類ごとにクラス(class)を作る
 - 複数のAWSリソースを1つのクラスにまとめた方が利点がある場合はまとめてOKとする
 - 同じ種類のAWSリソースを作成する場合でも、指定するパラメータが大幅に違うなどあれば別にクラスを作る
+- 1度作ったクラスを改変する際に、影響範囲が大きい or 不明 の場合はクラスを分割する
+  - 例
+    - `./lib/iam.ts`が既に複数の組合せで使用されているとする
+    - 組合せcom1の要件変更により`./lib/iam.ts`の改変が必要になった
+    - `./lib/iam.ts`改変の影響が不明
+    - `./lib/iam.ts`をコピーし`./lib/iam-com1.ts`を作成し`./lib/iam-com1.ts`を改変する
 - クラス(class)ごとにxxx.tsを作り`./lib/`配下に格納する
 - `./lib/`配下のxxx.tsファイルの命名規則
     - {AWSリソース名}.ts
@@ -25,7 +31,7 @@
 - クラス(class)について
     - リソースをN個作成できるようにする(※別途説明)
     - 作ったリソースはクロススタック参照できるようにする(`public readonly ・・・`)
-    - 作ったリソースは(念のため)CfnOutputValueでエクスポートする
+    - 作ったリソースは(念のため)CfnOutputでエクスポートする
     - constructorに書くコードはできるだけ少なくする
 - インターフェース(set)について
     - インターフェース(set)は、1つのAWSリソースを作成するに必要なパラメータのセットを定義する
@@ -164,6 +170,12 @@ class IamRoleStack extends Stack {
         exportName: `${dataSet.iamRoleName}Export`,
       });
 
+      // Export する
+      new CfnOutput(this, `${dataSet.iamRoleName}Output`, {
+        value: role.roleName,
+        exportName: `${dataSet.iamRoleName}Export`,
+      });
+
       this.iamRoles[dataSet.iamRoleName] = role;
     }
   }
@@ -193,12 +205,17 @@ export class LambdaStack extends Stack {
     private createLambdaFunc(props: LambdaProps) {
       for (const dataSet of props.lambdaSet) {
           console.log(`${dataSet.lambdaName}`);
-          new lambda.Function(this, dataSet.lambdaName, {
+          const lambdaFunction = new lambda.Function(this, dataSet.lambdaName, {
               runtime: lambda.Runtime.PYTHON_3_9,
               functionName: dataSet.lambdaName,
               code: lambda.Code.fromAsset(dataSet.codePath),
               handler: dataSet.lambdaHandler,
               role: dataSet.iamRole,
+          });
+
+          new CfnOutput(this, `${dataSet.lambdaName}Export`, {
+              value: lambdaFunction.functionArn,
+              exportName: `${dataSet.lambdaName}-Arn`,
           });
       }
     }
@@ -241,8 +258,8 @@ class Ec2Stack extends Stack {
   }
 }
 
-
 //■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■//
+
 const app = new App();
 
 //=======================================================//
@@ -345,7 +362,7 @@ app.synth();
 
 
 
-## (*1) formXXXの例？
+## (*1) formXXXの例
 
 ※注意※これら情報がどこまで正確か不明
 
