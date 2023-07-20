@@ -231,7 +231,7 @@ export class MyStack extends cdk.Stack {
       domain: 'S3', // S3|EFS
       endpointType: 'PUBLIC', // PUBLIC|VPC|VPC_ENDPOINT
       identityProviderType: 'SERVICE_MANAGED', // SERVICE_MANAGED|API_GATEWAY|AWS_DIRECTORY_SERVICE|AWS_LAMBDA
-      loggingRole: 'arn:aws:iam::602744163118:role/service-role/AWSTransferLoggingAccess', // arn:.*role/.*
+      loggingRole: 'arn:aws:iam::123456789012:role/service-role/AWSTransferLoggingAccess', // arn:.*role/.*
       protocols: ['SFTP'], // FTP|FTPS|SFTP|AS2
       securityPolicyName: 'TransferSecurityPolicy-2020-06', // TransferSecurityPolicy-.+
 

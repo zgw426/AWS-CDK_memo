@@ -1,0 +1,18 @@
+[
+    {
+        "note": "メモこれは lambda01 です",
+        "iamRoleName": "Custom20230718-01",
+        "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+        "lambdaName": "LambdaFunction01",
+        "lambdaHandler": "a01-sample.lambda_handler",
+        "codePath": "lambda/a03"
+    },
+    {
+        "note": "メモこれは lambda02 です",
+        "iamRoleName": "Custom20230718-02",
+        "policys": ["AmazonS3ReadOnlyAccess"],
+        "lambdaName": "LambdaFunction02",
+        "lambdaHandler": "a02-sample.lambda_handler",
+        "codePath": "lambda/a04"
+    }
+]

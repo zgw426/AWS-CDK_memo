@@ -1,0 +1,10 @@
+[
+    {
+      "note": "EC2インスタンス",
+      "ec2Name": "testEc2",
+      "iamRoleName": "iamrole-20230708-03",
+      "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+      "instanceType": "t2.micro",
+      "vpcName": "testvpc"
+    }
+]

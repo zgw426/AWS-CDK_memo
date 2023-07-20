@@ -1,0 +1,10 @@
+[
+        {
+          "vpcName": "test-vpc",
+          "cidr": "10.10.0.0/16"
+        },
+        {
+          "vpcName": "test4-vpc",
+          "cidr": "10.20.0.0/16"
+        }
+      ]
