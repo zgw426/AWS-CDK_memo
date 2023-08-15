@@ -1,5 +1,13 @@
 [
     {
+        "note": "備考欄 備考欄の内容はプログラムの処理では使われませんプログラムの処理では使われません",
+        "iamRoleName": "Lambdaに付与するIAMロール名 {pjName}{pjEnv}が接頭辞で付与されます",
+        "policys": ["IAMロールの設定するポリシー 新規作成しない場合は dummy など記載"],
+        "lambdaName": "Lambda名 {pjName}{pjEnv}が接頭辞で付与されます",
+        "lambdaHandler": "Lambdaのハンドラー",
+        "codePath": "Lambdaスクリプトの格納パス"
+    },
+    {
         "note": "メモこれは lambda01 です",
         "iamRoleName": "Custom20230718-01",
         "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
@@ -8,9 +16,9 @@
         "codePath": "lambda/a03"
     },
     {
-        "note": "メモこれは lambda02 です",
-        "iamRoleName": "Custom20230718-02",
-        "policys": ["AmazonS3ReadOnlyAccess"],
+        "note": "メモこれは lambda02 です。IAMロールはlambda01と同じIAMロールを割り当てます",
+        "iamRoleName": "Custom20230718-01",
+        "policys": ["dummy"],
         "lambdaName": "LambdaFunction02",
         "lambdaHandler": "a02-sample.lambda_handler",
         "codePath": "lambda/a04"

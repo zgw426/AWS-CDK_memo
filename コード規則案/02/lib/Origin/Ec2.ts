@@ -1,8 +1,8 @@
 import { App, Stack, StackProps, CfnOutput } from 'aws-cdk-lib';
+import { replaceUnderscore } from '../Origin/Common';
 import * as iam from 'aws-cdk-lib/aws-iam';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
-import { Vpc, SubnetType } from 'aws-cdk-lib/aws-ec2';
-import { replaceUnderscore, loadCommonVal, getHeadStr } from '../Origin/Common';
+import { Vpc } from 'aws-cdk-lib/aws-ec2';
 
 
 ///////////////////////////////////////////////////////////

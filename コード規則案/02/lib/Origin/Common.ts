@@ -17,8 +17,12 @@ export function addDependency(stack1: Stack, stack2: Stack) {
 }
 
 export function replaceUnderscore(str: string): string {
+    let result = str;
     //--- _ (アンダースコア) を - (ハイフン) に変換する ---//
-    return str.replace(/_/g, '-');
+    result = str.replace(/_/g, '-');
+    //--- / (スラッシュ) を - (ハイフン) に変換する ---//
+    result = str.replace(/\//g, '-');
+    return result;
 }
 
 export function toPascalCase(str: string): string {
@@ -90,4 +94,16 @@ export function getDataPath(app: App, fileName?: string){
         returnPath = `./data/${pjPath}/`;
     }
     return returnPath;
+}
+
+export function removeDuplicates(set: any[], key: string) {
+    //--- 重複削除 ---//
+    return set.filter((obj, index, self) => {
+        return (
+            index ===
+            self.findIndex(
+                (el) => el[key].toLowerCase() === obj[key].toLowerCase()
+            )
+        );
+    });
 }

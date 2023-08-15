@@ -14,7 +14,6 @@ export interface LambdaSet {
     lambdaName: string; // Lambda名
     lambdaHandler: string;
     codePath: string; // コード xxxx.py の格納パス
-    note: string; // 備考
     iamRole: iam.Role; // 付与するIAMロール
 }
 

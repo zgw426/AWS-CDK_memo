@@ -1,0 +1,21 @@
+[
+  {
+    "note": "API Gateway(ApiGateway.ts)のパラメータ",
+    "restApiName": "REST APIの名前",
+    "lambdaName": "連携するLambdaの名前",
+    "endpointTypes": "エンドポイントのタイプ [EDGE|REGIONAL]",
+    "stageName": "ステージ名",
+    "metricsEnabled": false,
+    "note-metricsEnabled": "Boolean [true|false]",
+    "accessLogDestination": "CloudWatchロググループ名"
+  },
+  {
+    "note": "1つ目",
+    "restApiName": "hogeapi",
+    "lambdaName": "hogelambda",
+    "endpointTypes": "REGIONAL",
+    "stageName": "stage01",
+    "metricsEnabled": false,
+    "accessLogDestination": "/apigw/hogelog"
+  }
+]

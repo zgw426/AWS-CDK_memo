@@ -12,6 +12,7 @@ export interface VpcProps extends StackProps {
 }
 
 export interface VpcSet{
+    note: string; // 備考
     vpcName: string; // VPC名(の一部)
     cidr: string; // CIDR
 }

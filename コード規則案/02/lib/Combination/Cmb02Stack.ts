@@ -20,11 +20,21 @@ export function Combination02Func(app: App, cmb00Stacks: VpcStack) {
   const filePath = getDataPath(app, "Combination/Cmb02Set.json");
   const dataSet: Combination02Set[] = loadCombinationFile(filePath) as Combination02Set[];
 
-  const cmb02IamRoleSet: IamRoleSet[] = dataSet.map(item => {
+  dataSet.shift(); // 1つ目を削除
+
+  let cmb02IamRoleSet: IamRoleSet[] = dataSet.map(item => {
     return {
       iamRoleName: item.iamRoleName,
       policys: item.policys
     };
+  });
+
+    //--- 重複削除 ---//
+    cmb02IamRoleSet = cmb02IamRoleSet.filter((obj, index, self) => {
+      return (
+        index ===
+        self.findIndex((el) => el.iamRoleName.toLowerCase() === obj.iamRoleName.toLowerCase())
+      );
   });
 
   const cmb02IamRoleProps: IamRoleProps = {

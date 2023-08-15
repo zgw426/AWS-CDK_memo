@@ -1,0 +1,10 @@
+[
+  {
+    "note": "CloudWatch Logs(CWLogs.ts)のパラメータ",
+    "logGroupName": "ロググループ名"
+  },
+  {
+    "note": "1つ目",
+    "logGroupName": "hoge/fuga/log0001"
+  }
+]

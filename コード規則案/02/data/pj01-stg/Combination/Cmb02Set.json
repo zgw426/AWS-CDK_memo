@@ -1,10 +1,18 @@
 [
-    {
-      "note": "EC2インスタンス",
-      "ec2Name": "testEc2",
-      "iamRoleName": "iamrole-20230708-03",
-      "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
-      "instanceType": "t2.micro",
-      "vpcName": "testvpc"
-    }
+  {
+    "note": "備考欄ですプログラムの処理では使われません",
+    "ec2Name": "EC2のNameタグ。{pjName}{pjEnv}が接頭辞で付与されます",
+    "iamRoleName": "EC2に付与するIAMロール名。{pjName}{pjEnv}が接頭辞で付与されます",
+    "policys": ["IAMロールの設定するポリシーです","新規作成しない場合は dummy など記載"],
+    "instanceType": "EC2のインスタンスタイプを設定します",
+    "vpcName": "EC2を起動するcmb00で作成したVPCを指定。"
+  },
+  {
+    "note": "EC2インスタンス",
+    "ec2Name": "testEc2",
+    "iamRoleName": "iamrole-20230708-03",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+    "instanceType": "t2.micro",
+    "vpcName": "testvpc"
+  }
 ]

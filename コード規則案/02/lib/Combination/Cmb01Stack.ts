@@ -1,13 +1,8 @@
 import { App } from 'aws-cdk-lib';
 import { IamRoleProps, IamRoleSet, IamRoleStack } from '../Origin/IamRole';
 import { LambdaProps, LambdaSet, LambdaStack } from '../Origin/Lambda';
-import { addDependency, loadCombinationFile, loadCommonVal, getHeadStr, getDataPath } from '../Origin/Common';
+import { addDependency, loadCombinationFile, getHeadStr, getDataPath, removeDuplicates } from '../Origin/Common';
 
-/*
-const pjHeadStr = getHeadStr("PASCAL");
-const filePath = './data/Combination/Cmb01Set.json';
-const dataSet: Combination01Set[] = loadCombinationFile(filePath) as Combination01Set[];
-*/
 
 export interface Combination01Set {
     note: string;
@@ -24,12 +19,17 @@ export function Combination01Func(app: App) {
     const filePath = getDataPath(app, "Combination/Cmb01Set.json");
     const dataSet: Combination01Set[] = loadCombinationFile(filePath) as Combination01Set[];
 
-    const cmb01IamRoleSet: IamRoleSet[] = dataSet.map(item => {
-            return {
+    dataSet.shift(); // 1つ目を削除
+
+    // --- IAM Role --- //
+    let cmb01IamRoleSet: IamRoleSet[] = dataSet.map(item => {
+        return {
             iamRoleName: item.iamRoleName,
             policys: item.policys
         };
     });
+
+    cmb01IamRoleSet = removeDuplicates(cmb01IamRoleSet, 'iamRoleName'); //重複削除。同じIAMロール名のものは1つしか作らない
 
     const cmb01IamRoleProps: IamRoleProps = {
         pjHeadStr: pjHeadStr,
@@ -38,6 +38,7 @@ export function Combination01Func(app: App) {
 
     const cmb01IamRoleStack = new IamRoleStack(app, `${pjHeadStr}Cmb01IamRoleStack`, cmb01IamRoleProps);
 
+    // --- Lambda --- //
     const cmb01LambdaSet: LambdaSet[] = dataSet.map(item => {
             return {
             note: item.note,

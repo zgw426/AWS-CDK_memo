@@ -1,0 +1,18 @@
+[
+  {
+    "note": "",
+    "iamRoleName": "付与するIAMロール",
+    "policys": ["付与するポリシー"],
+    "lambdaName": "Lambda名",
+    "lambdaHandler": "Lambdaハンドラー",
+    "codePath": "スクリプトファイルの格納パス"
+  },
+  {
+    "note": "1つ目",
+    "iamRoleName": "Custom20230718-01",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+    "lambdaName": "LambdaFunction01",
+    "lambdaHandler": "a01-sample.lambda_handler",
+    "codePath": "lambda/a03"
+  }
+]
