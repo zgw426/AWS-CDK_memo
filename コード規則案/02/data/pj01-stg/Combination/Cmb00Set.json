@@ -1,22 +1,22 @@
 [
     {
         "note": "備考欄 備考欄の内容はプログラムの処理では使われません",
-        "vpcName": "VPCのNameタグ {pjName}{pjEnv}が接頭辞で付与されます",
-        "cidr": "VPCのCIDR xxx.xxx.xxx.xxx/xx の形式で記載します"
+        "cmbNameForVpc": "VPCのNameタグ {pjName}{pjEnv}が接頭辞で付与されます",
+        "cmbCidrForVpc": "VPCのCIDR xxx.xxx.xxx.xxx/xx の形式で記載します"
     },
     {
         "note": "VPC 1 つ目",
-        "vpcName": "test2vpc",
-        "cidr": "10.10.0.0/16"
+        "cmbNameForVpc": "test2vpc",
+        "cmbCidrForVpc": "10.10.0.0/16"
     },
     {
         "note": "VPC 2 つ目",
-        "vpcName": "Test-vpc-123",
-        "cidr": "10.20.0.0/16"
+        "cmbNameForVpc": "Test-vpc-123",
+        "cmbCidrForVpc": "10.20.0.0/16"
     },
     {
         "note": "VPC 3 つ目。cmb02でEC2デプロイする",
-        "vpcName": "testvpc",
-        "cidr": "10.20.0.0/16"
+        "cmbNameForVpc": "testvpc",
+        "cmbCidrForVpc": "10.20.0.0/16"
     }
 ]

@@ -1,0 +1,53 @@
+[
+  {
+    "note": "備考",
+    "note---------------------------------------------------IAMRole": "",
+    "uniNameForIamRoleAddLambda": "",
+    "uniPolicysForIamRole": ["",""],
+    "note---------------------------------------------------Lambda": "",
+    "uniNameForLambda": "",
+    "uniHandlerForLambda": "",
+    "uniCodepathForLambda": "",
+    "note---------------------------------------------------API GateWay": "",
+    "uniNameForApigw": "",
+    "uniEndpointtypesForApigw": "",
+    "uniStagenameForApigw": "",
+    "uniMetricsenabledForApigw": false,
+    "note---------------------------------------------------ClowWatch Logs": "",
+    "uniLoggroupnameForCwlogAddApigw": ""
+  },
+  {
+    "note": "1つ目",
+    "note---------------------------------------------------IAMRole": "",
+    "uniNameForIamRoleAddLambda": "Custom20230718-01",
+    "uniPolicysForIamRole": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+    "note---------------------------------------------------Lambda": "",
+    "uniNameForLambda": "hogelambda",
+    "uniHandlerForLambda": "a01-sample.lambda_handler",
+    "uniCodepathForLambda": "lambda/a03",
+    "note---------------------------------------------------API GateWay": "",
+    "uniNameForApigw": "hogeapi",
+    "uniEndpointtypesForApigw": "REGIONAL",
+    "uniStagenameForApigw": "stage01",
+    "uniMetricsenabledForApigw": false,
+    "note---------------------------------------------------ClowWatch Logs": "",
+    "uniLoggroupnameForCwlogAddApigw": "/apigw/hogelog"
+  },
+  {
+    "note": "2つ目",
+    "note---------------------------------------------------IAMRole": "",
+    "uniNameForIamRoleAddLambda": "Custom20230718-02",
+    "uniPolicysForIamRole": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+    "note---------------------------------------------------Lambda": "",
+    "uniNameForLambda": "hogelambda2",
+    "uniHandlerForLambda": "a02-sample.lambda_handler",
+    "uniCodepathForLambda": "lambda/a04",
+    "note---------------------------------------------------API GateWay": "",
+    "uniNameForApigw": "hogeapi2",
+    "uniEndpointtypesForApigw": "REGIONAL",
+    "uniStagenameForApigw": "stage02",
+    "uniMetricsenabledForApigw": false,
+    "note---------------------------------------------------ClowWatch Logs": "",
+    "uniLoggroupnameForCwlogAddApigw": "/apigw/hogelog2"
+  }
+]

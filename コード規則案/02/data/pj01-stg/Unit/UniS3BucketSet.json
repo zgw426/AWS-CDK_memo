@@ -1,14 +1,14 @@
 [
   {
     "note": "S3バケット(s3Bucket.ts)のパラメータ",
-    "bucketName": "S3バケット名の一部"
+    "uniNameForS3bucket": "S3バケット名の一部"
   },
   {
     "note": "1つ目",
-    "bucketName": "piyo-bucket-name-20230708-01"
+    "uniNameForS3bucket": "piyo-bucket-name-20230708-01"
   },
   {
     "note": "2つ目",
-    "bucketName": "piyo-bucket-name-20230708-02"
+    "uniNameForS3bucket": "piyo-bucket-name-20230708-02"
   }
 ]

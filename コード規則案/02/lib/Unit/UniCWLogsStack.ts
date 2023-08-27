@@ -1,39 +1,40 @@
 import { App } from 'aws-cdk-lib';
-import { loadCombinationFile, getHeadStr, getDataPath, removeDuplicates } from '../Origin/Common';
-import { CWLogsProps, CWLogsSet, CWLogsStack } from '../Origin/CWLogs';
+import { loadCombinationFile, getHeadStr, getDataPath, removeDuplicates, getDevCode } from '../Origin/Common';
+import { CwlogsProps, CwlogsSet, CwlogsStack } from '../Origin/Cwlogs';
 
 
-export interface UnitCWLogsSet {
-  note: string;
-  logGroupName: string;
+export interface UnitCwlogsSet {
+  uniLoggroupnameForCwlog: string;
 }
 
 
-export function UnitCWLogsFunc(app: App) {
+export function UnitCwlogsFunc(app: App) {
   const pjHeadStr = getHeadStr(app, "PASCAL");
-  const filePath = getDataPath(app, "Unit/uniCWLogsSet.json");
-  const dataSet: UnitCWLogsSet[] = loadCombinationFile(filePath) as UnitCWLogsSet[];
+  const filePath = getDataPath(app, "Unit/UniCwlogsSet.json");
+  const dataSet: UnitCwlogsSet[] = loadCombinationFile(filePath) as UnitCwlogsSet[];
+  const staTail = getDevCode(app, "PASCAL");  // 開発コード
 
   dataSet.shift(); // 1つ目を削除
 
   // --- CloudWatch Logs --- //
-  let uniCWLogsSet: CWLogsSet[] = dataSet.map(item => {
+  let uniCwlogsSet: CwlogsSet[] = dataSet.map(item => {
     return {
-      pjHeadStr: pjHeadStr,
-      logGroupName: item.logGroupName
+      prmPjHeadStr: pjHeadStr,
+      prmLogGroupName: item.uniLoggroupnameForCwlog
     };
   });
 
-  uniCWLogsSet = removeDuplicates(uniCWLogsSet, 'logGroupName'); // 重複削除 ：同じロググループ名のものは1つしか作らない
+  uniCwlogsSet = removeDuplicates(uniCwlogsSet, 'prmLogGroupName'); // 重複削除
 
-  const uniCWLogsProps: CWLogsProps = {
-    pjHeadStr: pjHeadStr,
-    cWLogsSet: uniCWLogsSet
+  const uniCwlogsProps: CwlogsProps = {
+    note: `[UniCwlogsStack][CwlogsProps]`,
+    oriPjHeadStr: pjHeadStr,
+    oriCwlogsSet: uniCwlogsSet
   }
 
-  const uniCWLogsStack = new CWLogsStack(app, `${pjHeadStr}UniCWLogsStack`, uniCWLogsProps);
+  const uniCwlogsStack = new CwlogsStack(app, `${pjHeadStr}-UniCwlogs01-Stack${staTail}`, uniCwlogsProps);
 
   return {
-    uniCWLogsStack
+    uniCwlogsStack
   };
 }

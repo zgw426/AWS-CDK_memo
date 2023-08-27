@@ -1,89 +1,126 @@
 import { App } from 'aws-cdk-lib';
-import { loadCombinationFile, getHeadStr, getDataPath, removeDuplicates } from '../Origin/Common';
+import { addDependency, loadCombinationFile, getHeadStr, getDataPath, removeDuplicates, getDevCode } from '../Origin/Common';
 
-import { ApiGatewayProps, ApiGatewaySet, ApiGatewayStack } from '../Origin/ApiGateway';
-import { CWLogsProps, CWLogsSet, CWLogsStack } from '../Origin/CWLogs';
+import { ApigwProps, ApigwSet, ApigwStack } from '../Origin/ApiGateway';
+import { CwlogsProps, CwlogsSet, CwlogsStack } from '../Origin/Cwlogs';
+import { IamRoleProps, IamRoleSet, IamRoleStack } from '../Origin/IamRole';
+import { LambdaProps, LambdaSet, LambdaStack } from '../Origin/Lambda';
 
+///////////////////////////////////////////////////////
+// INTERFACE
 
-//import * as apigateway from 'aws-cdk-lib/aws-apigateway';
-//import * as logs from 'aws-cdk-lib/aws-logs';
-//import * as lambda from 'aws-cdk-lib/aws-lambda';
-
-// --- API Gateway --- //
-export interface UnitApiGatewaySet {
-  pjHeadStr: string;
-  restApiName: string;
-  lambdaName: string;
-  endpointTypes: string;
-  stageName: string;
-  metricsEnabled: boolean;
-  accessLogDestination: string;
+export interface UnitApigwSet {
+  uniNameForIamRoleAddLambda: string;
+  uniPolicysForIamRole: string[];
+  uniNameForLambda: string;
+  uniHandlerForLambda: string;
+  uniCodepathForLambda: string;
+  uniNameForApigw: string;
+  uniEndpointtypesForApigw: string;
+  uniStagenameForApigw: string;
+  uniMetricsenabledForApigw: boolean;
+  uniLoggroupnameForCwlogAddApigw: string;
 }
 
-// --- Lambda --- //
+///////////////////////////////////////////////////////
+// FUNCTION
 
-
-// --- CloudWatch Logs --- //
-export interface UnitCWLogsSet {
-  note: string;
-  logGroupName: string;
-}
-
-
-export function UnitApiGatewayFunc(app: App) {
+export function UnitApigwFunc(app: App) {
   const pjHeadStr = getHeadStr(app, "PASCAL");
-  const filePath = getDataPath(app, "Unit/UniApiGatewaySet.json");
-  const dataSet: UnitApiGatewaySet[] = loadCombinationFile(filePath) as UnitApiGatewaySet[];
+  const filePath = getDataPath(app, "Unit/UniApigwSet.json");
+  const dataSet: UnitApigwSet[] = loadCombinationFile(filePath) as UnitApigwSet[];
+  const staTail = getDevCode(app, "PASCAL");  // 開発コード
+
 
   dataSet.shift(); // 1つ目を削除
 
-  // --- Lambda --- //
+  // --- IAM Role --- //
+  let uniIamRoleSet: IamRoleSet[] = dataSet.map(item => {
+    return {
+      prmIamRoleName: item.uniNameForIamRoleAddLambda,
+      prmPolicys: item.uniPolicysForIamRole
+    };
+  });
 
+  uniIamRoleSet = removeDuplicates(uniIamRoleSet, 'prmIamRoleName'); //重複削除
+
+  const uniIamRoleProps: IamRoleProps = {
+    note: `[UniApiGatewayStack][uniIamRoleProps]`,
+    oriPjHeadStr: pjHeadStr,
+    oriIamRoleSet: uniIamRoleSet
+  }
+
+  const uniApigw01IamRoleStack = new IamRoleStack(app, `${pjHeadStr}-UniApigw01-IamRoleStack${staTail}`, uniIamRoleProps);
+
+  // --- Lambda --- //
+  let uniLambdaSet: LambdaSet[] = dataSet.map(item => {
+    return {
+      prmLambdaName: item.uniNameForLambda,
+      prmLambdaHandler: item.uniHandlerForLambda,
+      prmCodePath: getDataPath(app, item.uniCodepathForLambda),
+      prmIamRole: uniApigw01IamRoleStack.iamRoles[item.uniNameForIamRoleAddLambda],
+    };
+  });
+
+  uniLambdaSet = removeDuplicates(uniLambdaSet, 'prmLambdaName'); // 重複削除
+
+  const uniLambdaProps: LambdaProps = {
+    note: `[UniApiGatewayStack][uniLambdaProps]`,
+    oriPjHeadStr: pjHeadStr,
+    oriLambdaSet: uniLambdaSet
+  }
+
+  const uniApigw02LambdaStack = new LambdaStack(app, `${pjHeadStr}-UniApigw02-LambdaStack${staTail}`, uniLambdaProps);
 
   // --- CloudWatch Logs --- //
-  let uniCWLogsSet: CWLogsSet[] = dataSet.map(item => {
+  let uniCwlogsSet: CwlogsSet[] = dataSet.map(item => {
     return {
-      pjHeadStr: pjHeadStr,
-      logGroupName: item.accessLogDestination
+      prmPjHeadStr: pjHeadStr,
+      prmLogGroupName: item.uniLoggroupnameForCwlogAddApigw
     };
   });
 
-  uniCWLogsSet = removeDuplicates(uniCWLogsSet, 'logGroupName'); // 重複削除 ：同じロググループ名のものは1つしか作らない
+  uniCwlogsSet = removeDuplicates(uniCwlogsSet, 'prmLogGroupName'); // 重複削除
 
-  const uniCWLogsProps: CWLogsProps = {
-    pjHeadStr: pjHeadStr,
-    cWLogsSet: uniCWLogsSet
+  const uniCwlogsProps: CwlogsProps = {
+    note: `[UniApiGatewayStack][uniCwlogsProps]`,
+    oriPjHeadStr: pjHeadStr,
+    oriCwlogsSet: uniCwlogsSet
   }
 
-  const uniCWLogsStack = new CWLogsStack(app, `${pjHeadStr}UniCWLogsStackForApiGW`, uniCWLogsProps);
+  const uniApigw03CwlogsStack = new CwlogsStack(app, `${pjHeadStr}-UniApigw03-CwlogsStack${staTail}`, uniCwlogsProps);
 
-
-
-
-  // --- API Gateway --- //
-  let uniApiGatewaySet: ApiGatewaySet[] = dataSet.map(item => {
+  let uniApigwSet: ApigwSet[] = dataSet.map(item => {
     return {
-      pjHeadStr: pjHeadStr,
-      restApiName: item.restApiName,
-      lambdaName: item.lambdaName,
-      endpointTypes: item.endpointTypes,
-      stageName: item.stageName,
-      metricsEnabled: item.metricsEnabled,
-      accessLogDestination: item.accessLogDestination
+      prmPjHeadStr: pjHeadStr,
+      prmRestApiName: item.uniNameForApigw,
+      prmLambdaArn: uniApigw02LambdaStack.pubLambda[ item.uniNameForLambda ].functionArn,
+      prmEndpointTypes: item.uniEndpointtypesForApigw,
+      prmStageName: item.uniStagenameForApigw,
+      prmMetricsEnabled: item.uniMetricsenabledForApigw,
+      prmAccessLogDestination: item.uniLoggroupnameForCwlogAddApigw
     };
   });
 
-  uniApiGatewaySet = removeDuplicates(uniApiGatewaySet, 'restApiName'); // 重複削除 ：同じS３バケット名のものは1つしか作らない
+  uniApigwSet = removeDuplicates(uniApigwSet, 'prmRestApiName'); // 重複削除
 
-  const uniApiGatewayProps: ApiGatewayProps = {
-    pjHeadStr: pjHeadStr,
-    ApiGatewaySet: uniApiGatewaySet
+  const uniApigwProps: ApigwProps = {
+    note: `[UniApiGatewayStack][uniApigwProps]`,
+    oriPjHeadStr: pjHeadStr,
+    oriApigwSet: uniApigwSet
   }
 
-  const uniApiGatewayStack = new ApiGatewayStack(app, `${pjHeadStr}UniApiGatewayStack`, uniApiGatewayProps);
+  const uniApigw04ApigwStack = new ApigwStack(app, `${pjHeadStr}-UniApigw04-ApigwStack${staTail}`, uniApigwProps);
+
+  // 依存関係 (依存先, 依存元)
+  addDependency(uniApigw02LambdaStack, uniApigw01IamRoleStack);
+  addDependency(uniApigw02LambdaStack, uniApigw03CwlogsStack);
+  addDependency(uniApigw04ApigwStack, uniApigw02LambdaStack);
 
   return {
-    uniApiGatewayStack,
-    uniCWLogsStack
+    uniApigw01IamRoleStack,
+    uniApigw02LambdaStack,
+    uniApigw04ApigwStack,
+    uniApigw03CwlogsStack
   };
 }

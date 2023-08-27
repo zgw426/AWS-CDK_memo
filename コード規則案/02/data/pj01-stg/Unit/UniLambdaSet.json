@@ -1,18 +1,18 @@
 [
   {
     "note": "",
-    "iamRoleName": "付与するIAMロール",
-    "policys": ["付与するポリシー"],
-    "lambdaName": "Lambda名",
-    "lambdaHandler": "Lambdaハンドラー",
-    "codePath": "スクリプトファイルの格納パス"
+    "uniNameForIamRoleAddLambda": "付与するIAMロール",
+    "uniPolicysForIamRole": ["付与するポリシー"],
+    "uniNameForLambda": "Lambda名",
+    "uniHandlerForLambda": "Lambdaハンドラー",
+    "uniCodepathForLambda": "スクリプトファイルの格納パス"
   },
   {
     "note": "1つ目",
-    "iamRoleName": "Custom20230718-01",
-    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
-    "lambdaName": "LambdaFunction01",
-    "lambdaHandler": "a01-sample.lambda_handler",
-    "codePath": "lambda/a03"
+    "uniNameForIamRoleAddLambda": "Custom20230718-01",
+    "uniPolicysForIamRole": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+    "uniNameForLambda": "LambdaFunction01",
+    "uniHandlerForLambda": "a01-sample.lambda_handler",
+    "uniCodepathForLambda": "lambda/a03"
   }
 ]

@@ -6,15 +6,16 @@ import { replaceUnderscore } from '../Origin/Common';
 
 
 export interface LambdaProps extends StackProps {
-    pjHeadStr: string; // pjName + pjEnv
-    lambdaSet: LambdaSet[];
+    note: string;
+    oriPjHeadStr: string; // pjName + pjEnv
+    oriLambdaSet: LambdaSet[];
 }
 
 export interface LambdaSet {
-    lambdaName: string; // Lambda名
-    lambdaHandler: string;
-    codePath: string; // コード xxxx.py の格納パス
-    iamRole: iam.Role; // 付与するIAMロール
+    prmLambdaName: string; // Lambda名
+    prmLambdaHandler: string;
+    prmCodePath: string; // コード xxxx.py の格納パス
+    prmIamRole: iam.Role; // 付与するIAMロール
 }
 
 export class LambdaStack extends Stack {
@@ -28,17 +29,17 @@ export class LambdaStack extends Stack {
 
     private createLambdaFunc(props: LambdaProps) {
         let index = 0;
-        for (const dataSet of props.lambdaSet) {
+        for (const dataSet of props.oriLambdaSet) {
             try{
-                const lambdaFullName = `${props.pjHeadStr}${dataSet.lambdaName}`;
+                const lambdaFullName = `${props.oriPjHeadStr}${dataSet.prmLambdaName}`;
                 const cfnName = replaceUnderscore(`${lambdaFullName}`);
 
                 const lambdaFunction = new lambda.Function(this, lambdaFullName, {
                     runtime: lambda.Runtime.PYTHON_3_9,
                     functionName: lambdaFullName,
-                    code: lambda.Code.fromAsset(dataSet.codePath),
-                    handler: dataSet.lambdaHandler,
-                    role: dataSet.iamRole,
+                    code: lambda.Code.fromAsset(dataSet.prmCodePath),
+                    handler: dataSet.prmLambdaHandler,
+                    role: dataSet.prmIamRole,
                 });
 
                 new CfnOutput(this, `${cfnName}Export`, {
@@ -46,7 +47,8 @@ export class LambdaStack extends Stack {
                     exportName: `${cfnName}-Arn`,
                 });
 
-                this.pubLambda[lambdaFullName] = lambdaFunction;
+                this.pubLambda[`${dataSet.prmLambdaName}`] = lambdaFunction;
+                index ++;
             }catch (error){
                 console.log(`[ERROR] LambdaStack-createLambdaFunc\n\tthe ${index + 1} th dataSet.\n${error}`);
             }

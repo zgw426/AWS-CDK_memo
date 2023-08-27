@@ -7,13 +7,14 @@ import { replaceUnderscore, loadCommonVal, getHeadStr } from '../Origin/Common';
 // IamRole
 
 export interface IamRoleProps extends StackProps {
-  pjHeadStr: string;
-  iamRoleSet: IamRoleSet[];
+  note: string;
+  oriPjHeadStr: string;
+  oriIamRoleSet: IamRoleSet[];
 }
 
 export interface IamRoleSet{
-  iamRoleName: string; // IAM Role 名（の一部）
-  policys: string[]; // 設定するポリシー
+  prmIamRoleName: string; // IAM Role 名（の一部）
+  prmPolicys: string[]; // 設定するポリシー
 }
 
 export class IamRoleStack extends Stack {
@@ -28,10 +29,10 @@ export class IamRoleStack extends Stack {
 
   private createIamRolesFunc(props: IamRoleProps): void {
     let index = 0;
-    for (const dataSet of props.iamRoleSet) {
+    for (const dataSet of props.oriIamRoleSet) {
       try{
         // IAMロールを作成
-        const lambdaFullName = `${props.pjHeadStr}${dataSet.iamRoleName}`;
+        const lambdaFullName = `${props.oriPjHeadStr}${dataSet.prmIamRoleName}`;
         const cfnName = replaceUnderscore(`${lambdaFullName}`);
         
         const role = new iam.Role(this, `${lambdaFullName}`, {
@@ -39,7 +40,7 @@ export class IamRoleStack extends Stack {
           roleName: lambdaFullName,
         });
 
-        for (const policy of dataSet.policys) {
+        for (const policy of dataSet.prmPolicys) {
           // 必要なポリシーをアタッチ
           role.addManagedPolicy(iam.ManagedPolicy.fromAwsManagedPolicyName(policy));
         }
@@ -49,7 +50,7 @@ export class IamRoleStack extends Stack {
           exportName: `${cfnName}-RoleName`,
         });
 
-        this.iamRoles[dataSet.iamRoleName] = role;
+        this.iamRoles[dataSet.prmIamRoleName] = role;
       }catch (error){
         console.log(`[ERROR] IamRoleStack-createIamRolesFunc\n\tthe ${index + 1} th dataSet.\n${error}`);
       }

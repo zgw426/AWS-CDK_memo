@@ -83,7 +83,6 @@ export function getHeadStr(app: App, valFlg: string){
     return returnVal;
 }
 
-
 export function getDataPath(app: App, fileName?: string){
     //--- dataディレクトリ配下のパスを返す ---//
     const pjPath = app.node.tryGetContext("pjPath");
@@ -98,12 +97,64 @@ export function getDataPath(app: App, fileName?: string){
 
 export function removeDuplicates(set: any[], key: string) {
     //--- 重複削除 ---//
-    return set.filter((obj, index, self) => {
-        return (
-            index ===
-            self.findIndex(
-                (el) => el[key].toLowerCase() === obj[key].toLowerCase()
-            )
-        );
-    });
+    try {
+        return set.filter((obj, index, self) => {
+            if(obj[key])
+            {
+                return (
+                    index ===
+                    self.findIndex(
+                        (el) => el[key].toLowerCase() === obj[key].toLowerCase()
+                    )
+                );
+            }else{
+                throw new Error(`note=${obj["note"]}\n\tindex=${index}, key=${key}, obj[key]=${obj[key]}`);
+            }
+        });
+    } catch (error) {
+        console.error(`[ERROR][Common.js][removeDuplicates]\n\t${error}`);
+        return [];
+    }
 }
+
+export function getDevCode(app: App, valFlg: string){
+    //--- contextの変数 devStr を取得 ---//
+    // CAMEL: キャメルケースで連結
+    // PASCAL: パスカルケースで連結
+    const devCode = app.node.tryGetContext("devCode");
+    let returnVal;
+    switch (valFlg){
+        case "CAMEL": returnVal = toCamelCase(devCode); break;
+        case "PASCAL": returnVal = toPascalCase(devCode); break;
+    }
+    returnVal = `-${returnVal}`
+    return returnVal;
+}
+
+export function generateRandomString(length: number): string {
+  //--- （未利用）ランダム文字列を生成 ---//
+  const characters = 'abcdefghijklmnopqrstuvwxy0123456789';
+  let result = '';
+  for (let i = 0; i < length; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    result += characters.charAt(randomIndex);
+  }
+  return result;
+}
+
+export function generateTimestampWithRandomString(): string {
+    //--- （未利用）{日時}-{ランダム文字} を生成 ---//
+    const now = new Date();
+    const year = now.getFullYear().toString();
+    const month = (now.getMonth() + 1).toString().padStart(2, '0');
+    const day = now.getDate().toString().padStart(2, '0');
+    const hours = now.getHours().toString().padStart(2, '0');
+    const minutes = now.getMinutes().toString().padStart(2, '0');
+    const seconds = now.getSeconds().toString().padStart(2, '0');
+    const randomString = generateRandomString(3);
+
+    //const formattedTimestamp = `-${year}${month}${day}${hours}${minutes}${seconds}-${randomString}`;
+    const formattedTimestamp = `-${month}${day}${hours}${minutes}${seconds}-${randomString}`;
+    return formattedTimestamp;
+}  
+

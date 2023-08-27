@@ -7,14 +7,14 @@ import * as ec2 from 'aws-cdk-lib/aws-ec2';
 // VPC
 
 export interface VpcProps extends StackProps {
-    pjHeadStr: string; // pjName + pjEnv
-    vpcSet: VpcSet[];
+    oriPjHeadStr: string; // pjName + pjEnv
+    oriVpcSet: VpcSet[];
 }
 
 export interface VpcSet{
-    note: string; // 備考
-    vpcName: string; // VPC名(の一部)
-    cidr: string; // CIDR
+    note: string;
+    prmVpcName: string;
+    prmCidr: string;
 }
 
 
@@ -30,15 +30,15 @@ export class VpcStack extends Stack {
 
     private createVpcFunc(props: VpcProps): void {
         let index = 0;
-        for (const dataSet of props.vpcSet) {
+        for (const dataSet of props.oriVpcSet) {
             try{
                 // VPCを作成
-                const vpcFullName = `${props.pjHeadStr}${dataSet.vpcName}`;
+                const vpcFullName = `${props.oriPjHeadStr}${dataSet.prmVpcName}`;
                 const cfnName = replaceUnderscore(`${vpcFullName}`);
 
                 const vpc = new ec2.Vpc(this, `${vpcFullName}`, {
                     vpcName: vpcFullName,
-                    ipAddresses: ec2.IpAddresses.cidr(dataSet.cidr),
+                    ipAddresses: ec2.IpAddresses.cidr(dataSet.prmCidr),
                     maxAzs: 2,
                     subnetConfiguration: [
                         {
@@ -59,7 +59,7 @@ export class VpcStack extends Stack {
                     exportName: replaceUnderscore(`${cfnName}Id`),
                 });
 
-                this.pubVpc[dataSet.vpcName] = vpc;
+                this.pubVpc[dataSet.prmVpcName] = vpc;
             }catch (error){
                 console.log(`[ERROR] VpcStack-createVpcFunc\n\tthe ${index + 1} th dataSet.\n${error}`);
             }

@@ -5,12 +5,11 @@ import { addDependency, loadCombinationFile, getHeadStr, getDataPath, removeDupl
 
 
 export interface Combination01Set {
-    note: string;
-    iamRoleName: string;
-    policys: string[];
-    lambdaName: string;
-    lambdaHandler: string;
-    codePath: string;
+    cmbNameForIamRoleAddLambda: string;
+    cmbPolicysForIamRole: string[];
+    cmbNameForLambda: string;
+    cmbHandlerForLambda: string;
+    cmbCodepathForLambda: string;
 }
 
 
@@ -24,37 +23,42 @@ export function Combination01Func(app: App) {
     // --- IAM Role --- //
     let cmb01IamRoleSet: IamRoleSet[] = dataSet.map(item => {
         return {
-            iamRoleName: item.iamRoleName,
-            policys: item.policys
+            note: `[Cmb01Stack][cmb01IamRoleSet]`,
+            prmIamRoleName: item.cmbNameForIamRoleAddLambda,
+            prmPolicys: item.cmbPolicysForIamRole
         };
     });
 
-    cmb01IamRoleSet = removeDuplicates(cmb01IamRoleSet, 'iamRoleName'); //重複削除。同じIAMロール名のものは1つしか作らない
+    cmb01IamRoleSet = removeDuplicates(cmb01IamRoleSet, 'prmIamRoleName'); //重複削除
 
     const cmb01IamRoleProps: IamRoleProps = {
-        pjHeadStr: pjHeadStr,
-        iamRoleSet: cmb01IamRoleSet
+        note: `[Cmb01Stack][cmb01IamRoleProps]`,
+        oriPjHeadStr: pjHeadStr,
+        oriIamRoleSet: cmb01IamRoleSet
     }
 
-    const cmb01IamRoleStack = new IamRoleStack(app, `${pjHeadStr}Cmb01IamRoleStack`, cmb01IamRoleProps);
+    const cmb01IamRoleStack = new IamRoleStack(app, `${pjHeadStr}-Cmb0101-IamRoleStack`, cmb01IamRoleProps);
 
     // --- Lambda --- //
-    const cmb01LambdaSet: LambdaSet[] = dataSet.map(item => {
+    let cmb01LambdaSet: LambdaSet[] = dataSet.map(item => {
             return {
-            note: item.note,
-            lambdaName: item.lambdaName,
-            lambdaHandler: item.lambdaHandler,
-            codePath: getDataPath(app, item.codePath),
-            iamRole: cmb01IamRoleStack.iamRoles[item.iamRoleName],
+              note: `[Cmb01Stack][cmb01LambdaSet]`,
+              prmLambdaName: item.cmbNameForLambda,
+              prmLambdaHandler: item.cmbHandlerForLambda,
+              prmCodePath: getDataPath(app, item.cmbCodepathForLambda),
+              prmIamRole: cmb01IamRoleStack.iamRoles[item.cmbNameForIamRoleAddLambda],
         };
     });
 
+    cmb01LambdaSet = removeDuplicates(cmb01LambdaSet, 'prmLambdaName'); // 重複削除
+
     const cmb01LambdaProps: LambdaProps = {
-        pjHeadStr: pjHeadStr,
-        lambdaSet: cmb01LambdaSet
+        note: `[Cmb01Stack][cmb01LambdaProps]`,
+        oriPjHeadStr: pjHeadStr,
+        oriLambdaSet: cmb01LambdaSet
     }
 
-    const cmb01LambdaStack = new LambdaStack(app, `${pjHeadStr}Cmb01LambdaStack`, cmb01LambdaProps);
+    const cmb01LambdaStack = new LambdaStack(app, `${pjHeadStr}-Cmb0102-LambdaStack`, cmb01LambdaProps);
     addDependency(cmb01LambdaStack, cmb01IamRoleStack);
 
     return {

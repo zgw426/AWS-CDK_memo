@@ -1,0 +1,50 @@
+[
+  {
+    "note": "API Gateway(ApiGateway.ts)のパラメータ",
+    "note-IAMRole": "------ IAM Role ------",
+    "iamRoleName": "",
+    "policys": ["",""],
+    "note-Lambda": "------ Lambda ------",
+    "lambdaName": "",
+    "lambdaHandler": "",
+    "codePath": "",
+    "note-APIGW": "------ API Gateway ------",
+    "restApiName": "",
+    "endpointTypes": "",
+    "stageName": "",
+    "metricsEnabled": false,
+    "accessLogDestination": ""
+  },
+  {
+    "note": "1つ目",
+    "note-IAMRole": "------ IAM Role ------",
+    "iamRoleName": "Custom20230718-01",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+    "note-Lambda": "------ Lambda ------",
+    "lambdaName": "hogelambda",
+    "lambdaHandler": "a01-sample.lambda_handler",
+    "codePath": "lambda/a03",
+    "note-APIGW": "------ API Gateway ------",
+    "restApiName": "hogeapi",
+    "endpointTypes": "REGIONAL",
+    "stageName": "stage01",
+    "metricsEnabled": false,
+    "accessLogDestination": "/apigw/hogelog"
+  },
+  {
+    "note": "2つ目",
+    "note-IAMRole": "------ IAM Role ------",
+    "iamRoleName": "Custom20230718-02",
+    "policys": ["AmazonS3ReadOnlyAccess","AmazonDynamoDBReadOnlyAccess"],
+    "note-Lambda": "------ Lambda ------",
+    "lambdaName": "hogelambda2",
+    "lambdaHandler": "a02-sample.lambda_handler",
+    "codePath": "lambda/a04",
+    "note-APIGW": "------ API Gateway ------",
+    "restApiName": "hogeapi2",
+    "endpointTypes": "REGIONAL",
+    "stageName": "stage02",
+    "metricsEnabled": false,
+    "accessLogDestination": "/apigw/hogelog2"
+  }
+]

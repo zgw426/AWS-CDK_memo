@@ -1,10 +1,14 @@
 [
   {
     "note": "CloudWatch Logs(CWLogs.ts)のパラメータ",
-    "logGroupName": "ロググループ名"
+    "uniLoggroupnameForCwlog": "ロググループ名"
   },
   {
     "note": "1つ目",
-    "logGroupName": "hoge/fuga/log0001"
+    "uniLoggroupnameForCwlog": "hoge/fuga/log0001"
+  },
+  {
+    "note": "2つ目",
+    "uniLoggroupnameForCwlog": "hoge/fuga/log0002"
   }
 ]
